@@ -50,7 +50,7 @@ let compose (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} @ {name'.String}⟩" }
 
 let sub (name: Name) (name': Name): Name =
-    { String = $"⟨{name.String}⟩_{{{name'.String}}}" }
+    { String = $"{{{name.String}}}_{{{name'.String}}}" }
 
 let yoneda (name: Name): Name =
     { String = $"{{ {yo.String}_{{{name.String}}} }}" }

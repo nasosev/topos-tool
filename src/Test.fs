@@ -293,8 +293,8 @@ module RandomTests =
     let ``# sub F = # hom <F, Omega>`` cat = // Note we only test the cardinalities.
         let oG = tryMakeArbPushout cat
 
-        match (oG) with
-        | (Some G) ->
+        match oG with
+        | Some G ->
             let subF = (Subobject.subalgebra cat G).Subobjects
             let omega = Truth.omega cat
             Set.count (Morphism.hom G omega) = Set.count subF
@@ -305,8 +305,8 @@ module RandomTests =
     let ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat = // Note we only test the cardinalities.
         let oG = tryMakeArbPushout cat
 
-        match (oG) with
-        | (Some G) ->
+        match oG with
+        | Some G ->
             let subalg = (Subobject.subalgebra cat G)
             let (X, Y) = subalg.Subobjects |> sampleTwo
             let (+) = Subobject.join
@@ -320,8 +320,8 @@ module RandomTests =
     let ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat = // Note we only test the set cardinalities.
         let oG = tryMakeArbPushout cat
 
-        match (oG) with
-        | (Some G) ->
+        match oG with
+        | Some G ->
             let subalg = (Subobject.subalgebra cat G)
             let (X, Y) = subalg.Subobjects |> sampleTwo
             let (+) = Subobject.join
@@ -400,6 +400,23 @@ module RandomTests =
             static member ``(Graphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(Graphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
 
+    module RGraphs =
+        open Examples.RGraphs
+
+        type RGraphs =
+            static member ``(RGraphs) F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``(RGraphs) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``(RGraphs) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``(RGraphs) F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``(RGraphs) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+
+            static member ``(RGraphs) # hom<F * G, H> = # hom <F, G => H>`` =
+                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+
+            static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``(RGraphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
+            static member ``(RGraphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            
     module TruncESets =
         open Examples.TruncESets
 
@@ -417,22 +434,6 @@ module RandomTests =
             static member ``(TruncESets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(TruncESets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
 
-    module RGraphs =
-        open Examples.RGraphs
-
-        type RGraphs =
-            static member ``(RGraphs) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(RGraphs) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(RGraphs) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(RGraphs) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(RGraphs) F * G ~= G * F`` = ``F * G ~= G * F`` cat
-
-            static member ``(RGraphs) # hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
-
-            static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(RGraphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(RGraphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
 
 let testDeterministic () =
     let config = { Config.Default with MaxTest = 1 }

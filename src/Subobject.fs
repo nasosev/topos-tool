@@ -147,7 +147,7 @@ let supplement (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S>
     let name = Name.supplement F.Name
     H |> Presheaf.rename name
 
-/// Cooundary in a coheyting algebra.
+/// Coboundary in a heyting algebra.
 let coboundary (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.coboundary F.Name
     join F (negate alg F) |> Presheaf.rename name

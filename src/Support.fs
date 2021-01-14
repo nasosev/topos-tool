@@ -13,7 +13,6 @@ type Relation<'A, 'B when 'A: comparison and 'B: comparison> =
         m.[a, b]
 
 [<RequireQualifiedAccess>]
-
 module List =
 
     /// Binary product of lists.

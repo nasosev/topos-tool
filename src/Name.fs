@@ -41,10 +41,10 @@ let hom (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} => {name'.String}⟩" }
 
 let equaliser (name: Name) (name': Name): Name =
-    { String = $"⟨Eq [{name.String}, {name'.String}]⟩" }
+    { String = $"Eq [{name.String}, {name'.String}]" }
 
 let coequaliser (name: Name) (name': Name): Name =
-    { String = $"⟨Coeq [{name.String}, {name'.String}]⟩" }
+    { String = $"Coeq [{name.String}, {name'.String}]" }
 
 let compose (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} @ {name'.String}⟩" }

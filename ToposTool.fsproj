@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>ToposTool</RootNamespace>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="src\Support.fs" />
+        <Compile Include="src\Types.fs" />
+        <Compile Include="src\Name.fs" />
+        <Compile Include="src\Arrow.fs" />
+        <Compile Include="src\Category.fs" />
+        <Compile Include="src\Morphism.fs" />
+        <Compile Include="src\Yoneda.fs" />
+        <Compile Include="src\Presheaf.fs" />
+        <Compile Include="src\Subobject.fs" />
+        <Compile Include="src\Truth.fs" />
+        <Compile Include="src\Topology.fs" />
+        <Compile Include="src\Examples.fs" />
+        <Compile Include="src\Test.fs" />
+        <Compile Include="src\Latex.fs" />
+    </ItemGroup>
+    <ItemGroup>
+      <PackageReference Include="FsCheck" Version="2.14.3" />
+    </ItemGroup>
+</Project>

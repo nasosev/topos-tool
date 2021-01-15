@@ -13,7 +13,7 @@ version: prerelease
     - [win](https://fsharp.org/use/windows/)
     - [freebsd](https://fsharp.org/use/freebsd/)
 - notebooks
-  - this program is intended to be used in .ipynb notebook files within visual studio code (jupyter also works but it does not display the latex properly). see https://github.com/dotnet/interactive for details on how to set this up.
+  - this program is intended to be used in .ipynb notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive for details on how to set this up.
   - examples are in the directory "nb".
 - tests
   - run the tests by entering `dotnet fsi test/Test.fsx` at your terminal.

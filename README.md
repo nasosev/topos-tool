@@ -6,6 +6,12 @@ version: prerelease
 ---
 
 ## how to
+- fsharp
+  - you will need fsharp installed:
+    - [linux](https://fsharp.org/use/linux/)
+    - [mac](https://fsharp.org/use/mac/)
+    - [win](https://fsharp.org/use/windows/)
+    - [freebsd](https://fsharp.org/use/freebsd/)
 - notebooks
   - this program is intended to be used in .ipynb notebook files within visual studio code (jupyter also works but it does not display the latex properly). see https://github.com/dotnet/interactive for details on how to set this up.
   - examples are in the directory "nb".

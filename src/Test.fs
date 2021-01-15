@@ -195,6 +195,7 @@ module DeterministicTests =
 module RandomTests =
     // todo: pullback of monic is monic
     // todo: pasting lemma
+    
     // Samples an element from the input sequence.
     let sampleOne g =
         g
@@ -416,7 +417,7 @@ module RandomTests =
             static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(RGraphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(RGraphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
-            
+
     module TruncESets =
         open Examples.TruncESets
 

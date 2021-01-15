@@ -98,7 +98,7 @@ let joinMany (alg: Subalgebra<'A, 'S>) (Fs: Set<Presheaf<'A, 'S>>): Presheaf<'A,
 
 /// Meet of subobjects  in a heyting algebra.
 let meet (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let name = Name.join F.Name G.Name
+    let name = Name.meet F.Name G.Name
 
     let ob =
         map [ for A in Map.dom F.Ob do

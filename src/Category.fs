@@ -112,9 +112,9 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
                 && Set.contains b nonidArrows
                 && Set.contains c nonidArrows)
 
-        (Map.toList C.Compose, Map.toList D.Compose)
-        ||> List.product
-        |> List.map (fun (((a, a'), a''), ((b, b'), b'')) ->
+        (Map.toSet C.Compose, Map.toSet D.Compose)
+        ||> Set.product
+        |> Set.map (fun (((a, a'), a''), ((b, b'), b'')) ->
             ((productAr (a, b), productAr (a', b')), productAr (a'', b'')))
         |> map
         |> filterId // todo: it would be more efficient to filter first.
@@ -127,7 +127,6 @@ let (*) product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> = product
 /// todo: Binary sum of categories.
 
 /// Category of elements of a presheaf.
-// todo: rewrite  to use `make`
 let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     let name = Name.categoryOfElements F.Name
 
@@ -136,55 +135,33 @@ let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
                   for X in F.Ob.[A] do
                       (A, X) ]
 
-    let liftAr (X, X': 'S) (a: Arrow<'A>): Arrow<'A * 'S> =
-        { Name = Name.sup a.Name (Name.exp (Name.name a.Dom) (Name.name a.Cod))
+    let lift (X, X': 'S) (a: Arrow<'A>): Arrow<'A * 'S> =
+        { Name = a.Name
           Dom = (a.Dom, X)
           Cod = (a.Cod, X') }
 
-    let hom =
-        map [ for ((A, X), (A', X')) in Set.square objects do
-                  let homAXBY =
-                      cat.Hom.[A, A']
-                      |> Set.filter (fun a -> F.Ar.[a].[X'] = X)
-                      |> Set.map (liftAr (X, X'))
-
-                  (((A, X), (A', X')), homAXBY) ]
-
-    let id =
-        map [ for AX in objects do
-                  (AX, Arrow.id AX) ]
+    let nonidArrows =
+        set [ for a in cat.NonidArrows do
+                  F.Ob.[a.Cod]
+                  |> Set.filter (fun s -> Set.contains F.Ar.[a].[s] F.Ob.[a.Dom])
+                  |> Set.map (fun s -> lift (F.Ar.[a].[s], s) a) ]
+        |> Set.unionMany
 
     let compose =
-        let projectAr1 (a: Arrow<'A * 'S>): Arrow<'A> =
-            { Name = Name.trimSup a.Name
+        let proj1 (a: Arrow<'A * 'S>): Arrow<'A> =
+            { Name = a.Name
               Dom = fst a.Dom
               Cod = fst a.Cod }
 
-        let projectAr2 (a: Arrow<'A * 'S>): Arrow<'S> =
-            { Name = Name.ofString ""
-              Dom = snd a.Dom
-              Cod = snd a.Cod }
+        map [ for a in nonidArrows do
+                  for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
+                      let ba =
+                          let dom, cod = (snd b.Dom, snd a.Cod)
+                          lift (dom, cod) (cat.Compose.[proj1 b, proj1 a])
 
-        map [ for (B, (C, D)) in Set.product objects (Set.square objects) do
-                  for (b, b') in Set.product hom.[B, C] hom.[C, D] do
-                      let a, a' = projectAr1 b, projectAr1 b'
+                      ((b, a), ba) ]
 
-                      let dom, cod =
-                          ((projectAr2 b).Dom, (projectAr2 b').Cod)
-
-                      let b'b = liftAr (dom, cod) (cat.Compose.[a', a])
-                      ((b, b'), b'b) ]
-
-    let arrows = hom |> Map.image |> Set.unionMany
-    let nonidArrows = id |> Map.image |> Set.difference arrows
-
-    { Name = name
-      Objects = objects
-      Arrows = arrows
-      NonidArrows = nonidArrows
-      Hom = hom
-      Id = id
-      Compose = compose }
+    make name.String objects nonidArrows compose
 
 // todo: Comma category, slice categories.
 

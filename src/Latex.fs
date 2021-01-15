@@ -44,7 +44,7 @@ let ofSeq (X: seq<'A>): string =
     X
     |> Seq.map ofGeneric
     |> String.concat ", "
-    |> sprintf @"\[\left\lbrace%s\right\rbrace\]"
+    |> sprintf @"\[\left\lbrace %s \right\rbrace\]"
 
 let ofMap (x: Map<_, _>): string =
     x
@@ -60,7 +60,7 @@ let private ofInnerMap (x: Map<_, _>): string =
     |> List.map (fun (k, v) -> sprintf @"%s &\mapsto %s\\" (ofGeneric k) (ofGeneric v))
     |> String.concat "\n"
     |> sprintf "\n%s\n"
-    |> sprintf @"\left\lbrace\begin{aligned}%s\end{aligned}\right\rbrace"
+    |> sprintf @"\left\lbrace\begin{aligned}%s\end{aligned}\right\rbrace "
 
 let ofMapMap (x: Map<'A, Map<_, _>>): string =
     x

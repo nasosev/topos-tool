@@ -10,13 +10,16 @@ let yo (cat: Category<'A>)
 
         let ob =
             map [ for B in cat.Objects do
-                      (B, cat.Hom.[B, A]) ]
+                      let X = cat.Hom.[B, A]
+                      (B, X) ]
 
         let ar =
             map [ for a in cat.Arrows do
-                      (a,
-                       map [ for b in cat.Hom.[a.Cod, A] do
-                                 (b, cat.Compose.[b, a]) ]) ]
+                      let x =
+                          map [ for b in cat.Hom.[a.Cod, A] do
+                                    (b, cat.Compose.[b, a]) ]
+
+                      (a, x) ]
 
         { Name = name; Ob = ob; Ar = ar }
 
@@ -25,9 +28,11 @@ let yo (cat: Category<'A>)
 
         let mapping =
             map [ for A in cat.Objects do
-                      (A,
-                       map [ for b in cat.Hom.[A, a.Dom] do
-                                 (b, cat.Compose.[a, b]) ]) ]
+                      let x =
+                          map [ for b in cat.Hom.[A, a.Dom] do
+                                    (b, cat.Compose.[a, b]) ]
+
+                      (A, x) ]
 
         { Name = name; Mapping = mapping }
 

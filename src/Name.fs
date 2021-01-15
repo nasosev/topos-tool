@@ -7,20 +7,9 @@ let pi = { String = @"\pi" }
 let omega = { String = @"\Omega" }
 let top = { String = @"\top" }
 let bot = { String = @"\bot" }
-let point = { String = "*" }
 let ofString (s: string): Name = { String = s }
 let ofInt (i: int): Name = { String = $"{i}" }
 let name a: Name = { String = $"{a}" }
-
-let trimSup (name: Name): Name =
-    { String =
-          System
-              .Text
-              .RegularExpressions
-              .Regex
-              .Match(name.String, @".+?(?=\^)")
-              .Value }
-
 let id (name: Name): Name = { String = $"1_{{{name.String}}}" }
 let categoryOfElements (name: Name): Name = { String = $"\int {name.String}" }
 let negate (name: Name): Name = { String = $"@!{name.String}" }
@@ -55,14 +44,8 @@ let sub (name: Name) (name': Name): Name =
 let yoneda (name: Name): Name =
     { String = $"{{ {yo.String}_{{{name.String}}} }}" }
 
-let sup (name: Name) (name': Name): Name =
-    { String = $"{name.String}^{{{name'.String}}}" }
-
 let lessEq (name: Name) (name': Name): Name =
     { String = $"{name.String} <= {name'.String}" }
-
-let slice (name: Name) (name': Name): Name =
-    { String = $"{name.String} / {name'.String}" }
 
 let join (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} \/ {name'.String}⟩" }

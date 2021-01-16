@@ -3,43 +3,42 @@
 [<RequireQualifiedAccess>]
 module Latex
 
-open System.Text.RegularExpressions
-
 let ofGeneric (o: obj): string =
     let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
 
-    let unwrapDUStrings (input: string): string =
-        Regex.Replace(input, "[A-Za-z]* \"", " ")
+    let regexReplace (pattern: string) (replacement: string) (input: string) =
+        System.Text.RegularExpressions.Regex.Replace(input, pattern, replacement)
+
+    let regexReplaceRec replace input =
+        let rec recurse input =
+            if replace input = input then input else recurse (replace input)
+
+        recurse input
 
     let str = $"%0A{o}" // Sets print width to zero.
 
     str
-    |> unwrapDUStrings
-    |> replace "\")" ""
-    |> replace "Choice1Of2 (" "\iota_1 "
-    |> replace "Choice2Of2 (" "\iota_2 "
-    |> replace "Choice1Of2" "\iota_1 "
-    |> replace "Choice2Of2" "\iota_2 "
-    |> replace @"set [" " ["
+    |> regexReplace "Choice(\d)Of\d \((.*?)\)" "\\iota_$1 $2 " // Converts coproducts.
+    |> regexReplace "Choice(\d)Of\d" "\\iota_$1 " // Converts coproducts. TODO need recurse?
+    |> regexReplace "[A-Za-z]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
+    |> replace @"set []" @"\emptyset "
+    |> regexReplaceRec (regexReplace "set \[(.+)\]" "\\lbrace $1 \\rbrace ") // Recursively converts sets.
+    |> regexReplaceRec (regexReplace "\((.*)\)" "\\langle $1 \\rangle ") // Recursively converts tuples.
+    |> regexReplaceRec (regexReplace "\[(.*)\]" "\\langle $1 \\rangle ") // Recursively converts lists.
+    |> replace @";" @", "
+    |> replace @"..." @"\ldots "
     |> replace @"->" @"\to "
     |> replace @"=>" @"\Rightarrow "
     |> replace @"~" @"{\sim} "
     |> replace @"!" @"\neg "
     |> replace @"/\" @"\land "
     |> replace @"\/" @"\lor "
-    |> replace "\"" @" "
     |> replace @"@" @"\circ "
     |> replace @"*" @"\times "
     |> replace @"<=" @"\leq "
-    |> replace @"[]" @"\emptyset "
-    |> replace @"[" @"\lbrace "
-    |> replace @"]" @"\rbrace "
-    |> replace @"(" @"\langle "
-    |> replace @")" @"\rangle "
-    |> replace @"⟨" @"("
-    |> replace @"⟩" @")"
-    |> replace @";" @", "
-    |> replace @"..." @"\ldots "
+    |> replace "⟨" "(" // Converts unicode bracket.
+    |> replace "⟩" ")" // Converts unicode bracket.
+    |> replace "\"" " " // Remove quotes.
 
 let ofName (name: Name): string = $"\[\mathsf{{{ofGeneric name}}}\]"
 

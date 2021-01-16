@@ -4,6 +4,7 @@
 module Latex
 
 let ofGeneric (o: obj): string =
+
     let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
 
     let regexReplace (pattern: string) (replacement: string) (input: string) =
@@ -18,13 +19,16 @@ let ofGeneric (o: obj): string =
     let str = $"%0A{o}" // Sets print width to zero.
 
     str
-    |> regexReplace "Choice(\d)Of\d \((.*?)\)" "\\iota_$1 $2 " // Converts coproducts.
-    |> regexReplace "Choice(\d)Of\d" "\\iota_$1 " // Converts coproducts. TODO need recurse?
     |> regexReplace "[A-Za-z]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
     |> replace @"set []" @"\emptyset "
-    |> regexReplaceRec (regexReplace "set \[(.+)\]" "\\lbrace $1 \\rbrace ") // Recursively converts sets.
-    |> regexReplaceRec (regexReplace "\((.*)\)" "\\langle $1 \\rangle ") // Recursively converts tuples.
-    |> regexReplaceRec (regexReplace "\[(.*)\]" "\\langle $1 \\rangle ") // Recursively converts lists.
+    |> regexReplaceRec (regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // As above.
+    |> regexReplaceRec (regexReplace "set \[(.+)\]" "\\lbrace $1 \\rbrace ") // Recursively converts nonempty sets.
+    |> replace @"(" @"\langle "
+    |> replace @")" @"\rangle "
+    |> replace @"[" @"\langle "
+    |> replace @"]" @"\rangle "
+    |> replace @"⟨" "( "
+    |> replace @"⟩" @") "
     |> replace @";" @", "
     |> replace @"..." @"\ldots "
     |> replace @"->" @"\to "
@@ -36,9 +40,8 @@ let ofGeneric (o: obj): string =
     |> replace @"@" @"\circ "
     |> replace @"*" @"\times "
     |> replace @"<=" @"\leq "
-    |> replace "⟨" "(" // Converts unicode bracket.
-    |> replace "⟩" ")" // Converts unicode bracket.
     |> replace "\"" " " // Remove quotes.
+
 
 let ofName (name: Name): string = $"\[\mathsf{{{ofGeneric name}}}\]"
 

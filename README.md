@@ -20,7 +20,7 @@ version: prerelease
 
 ## features
 - categories
-  - binary products
+  - binary products/sums
   - category of elements
 - presheaves
   - yoneda embedding

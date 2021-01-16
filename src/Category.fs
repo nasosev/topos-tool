@@ -86,13 +86,15 @@ let make (nameStr: string)
 
 /// Binary product of categories.
 let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
+
+    let name = Name.product C.Name D.Name
+
+    let objects = (C.Objects, D.Objects) ||> Set.product
+
     let productAr (a: Arrow<'A>, b: Arrow<'B>): Arrow<'A * 'B> =
         { Name = Name.product a.Name b.Name
           Dom = (a.Dom, b.Dom)
           Cod = (a.Cod, b.Cod) }
-
-    let name = Name.product C.Name D.Name
-    let objects = (C.Objects, D.Objects) ||> Set.product
 
     let nonidArrows =
         (C.Arrows, D.Arrows)
@@ -104,8 +106,8 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         |> Set.map productAr
 
     let compose =
-        let filterId (compose: Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>)
-                     : Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>> =
+        let filterNonid (compose: Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>)
+                        : (Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>) =
             compose
             |> Map.filter (fun (a, b) c ->
                 Set.contains a nonidArrows
@@ -117,14 +119,64 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         |> Set.map (fun (((a, a'), a''), ((b, b'), b'')) ->
             ((productAr (a, b), productAr (a', b')), productAr (a'', b'')))
         |> map
-        |> filterId // todo: it would be more efficient to filter first.
+        |> filterNonid // todo: it would be more efficient to filter first.
 
     make name.String objects nonidArrows compose
 
 /// Infix version of Category.product.
 let (*) product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> = product C D
 
-/// todo: Binary sum of categories.
+/// Binary sum of categories.
+let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
+
+    let name = Name.sum C.Name D.Name
+
+    let coproj1 (a: Arrow<'A>): Arrow<Choice<'A, 'B>> =
+        { Name = Name.coproj 1 a.Name
+          Dom = Choice1Of2 a.Dom
+          Cod = Choice1Of2 a.Cod }
+
+    let coproj2 (a: Arrow<'B>): Arrow<Choice<'A, 'B>> =
+        { Name = Name.coproj 2 a.Name
+          Dom = Choice2Of2 a.Dom
+          Cod = Choice2Of2 a.Cod }
+
+    let objects = (C.Objects, D.Objects) ||> Set.sum
+
+    let nonidArrows =
+        (C.NonidArrows |> Set.map coproj1, D.NonidArrows |> Set.map coproj2)
+        ||> Set.union
+
+    let compose =
+        let tripleMap (f: 'a -> 'b) ((a: 'a, a': 'a), a'': 'a): ('b * 'b) * 'b = ((f a, f a'), f a'')
+
+        let liftComposeC =
+            C.Compose
+            |> Map.toSet
+            |> Set.map (tripleMap coproj1)
+
+        let liftComposeD =
+            D.Compose
+            |> Map.toSet
+            |> Set.map (tripleMap coproj2)
+
+        let filterNonid (compose: Map<(Arrow<Choice<'A, 'B>> * Arrow<Choice<'A, 'B>>), Arrow<Choice<'A, 'B>>>)
+                        : (Map<(Arrow<Choice<'A, 'B>> * Arrow<Choice<'A, 'B>>), Arrow<Choice<'A, 'B>>>) =
+            compose
+            |> Map.filter (fun (a, b) c ->
+                Set.contains a nonidArrows
+                && Set.contains b nonidArrows
+                && Set.contains c nonidArrows)
+
+        (liftComposeC, liftComposeD)
+        ||> Set.union
+        |> map
+        |> filterNonid
+
+    make name.String objects nonidArrows compose
+
+/// Infix version of Category.sum.
+let (+) sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> = sum C D
 
 /// Category of elements of a presheaf.
 let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
@@ -163,8 +215,6 @@ let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
 
     make name.String objects nonidArrows compose
 
-// todo: Comma category, slice categories.
-
 /// Creates a category from a poset.
 let ofPoset (nameStr: string) (lessEq: Relation<'A, 'A>): Category<'A> =
     let X = Relation.dom lessEq
@@ -186,3 +236,5 @@ let ofPoset (nameStr: string) (lessEq: Relation<'A, 'A>): Category<'A> =
                       ((a, b), ba) ]
 
     make nameStr X nonidArrows nontrivCompose
+
+// todo: Comma category, slice categories.

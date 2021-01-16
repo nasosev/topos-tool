@@ -15,8 +15,11 @@ let ofGeneric (o: obj): string =
 
     str
     |> unwrapDUStrings
-    |> replace "Choice1Of2" "\iota_0 "
-    |> replace "Choice2Of2" "\iota_1 "
+    |> replace "\")" ""
+    |> replace "Choice1Of2 (" "\iota_1 "
+    |> replace "Choice2Of2 (" "\iota_2 "
+    |> replace "Choice1Of2" "\iota_1 "
+    |> replace "Choice2Of2" "\iota_2 "
     |> replace @"set [" " ["
     |> replace @"->" @"\to "
     |> replace @"=>" @"\Rightarrow "

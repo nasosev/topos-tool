@@ -9,7 +9,4 @@ let make (nameStr: string) (dom: 'A) (cod: 'A): Arrow<'A> =
       Cod = cod }
 
 /// Creates the identity arrow on a given object.
-let internal id (A: 'A): Arrow<'A> =
-    { Name = Name.id (Name.ofString $"{A}")
-      Dom = A
-      Cod = A }
+let internal id (A: 'A): Arrow<'A> = { Name = Name.id A; Dom = A; Cod = A }

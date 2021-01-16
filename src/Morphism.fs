@@ -86,7 +86,7 @@ let compose (n: Morphism<'A, 'T, 'U>) (m: Morphism<'A, 'S, 'T>): Morphism<'A, 'S
     { Name = name; Mapping = mapping }
 
 /// Lifts a function to a morphism.
-let lift (F: Presheaf<'A, 'S>) (f: 'S -> 'T) (name: Name): Morphism<'A, 'S, 'T> =
+let lift (name: Name) (F: Presheaf<'A, 'S>) (f: 'S -> 'T): Morphism<'A, 'S, 'T> =
     let mapping =
         map [ for A in Map.dom F.Ob do
                   let x =
@@ -102,17 +102,17 @@ let lift (F: Presheaf<'A, 'S>) (f: 'S -> 'T) (name: Name): Morphism<'A, 'S, 'T> 
 /// types.
 let id (dom: Presheaf<'A, 'S>): Morphism<'A, 'S, 'S> =
     let name = Name.id dom.Name
-    lift dom id name
+    lift name dom id
 
 /// Gives the first projection morphism from a binary product presheaf.
 let proj1 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'S> =
-    let name = Name.sub Name.pi (Name.ofInt 1)
-    lift dom fst name
+    let name = Name.proj 1
+    lift name dom fst
 
 /// Gives the second projection morphism from a binary product presheaf.
 let proj2 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'T> =
-    let name = Name.sub Name.pi (Name.ofInt 2)
-    lift dom snd name
+    let name = Name.proj 2
+    lift name dom snd
 
 /// Binary product of morphisms.
 let product (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'U, 'D>): Morphism<'A, ('S * 'U), ('T * 'D)> =

@@ -6,6 +6,7 @@ module Subobject
 /// todo: add the arrow map.
 let sub (cat: Category<'A>) = // : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), 'B> =
     let name = Name.ofString "Sub"
+
     // Give a descriptive name for a subpresheaf with the specified objects and arrow maps.
     let nameSubpresheaf (i: int) (F: Presheaf<'A, 'S>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): Name =
         if F.Ob = ob && F.Ar = ar then Name.sub F.Name Name.top
@@ -65,16 +66,16 @@ let subalgebra (cat: Category<'A>) (F: Presheaf<'A, 'S>): Subalgebra<'A, 'S> =
         let name = Name.sub F.Name Name.bot
         { B with Name = name }
 
-    let subpresheaves = F |> (sub cat).Object
+    let subobjects = F |> (sub cat).Object
 
     let lessEq =
-        [ for (G, H) in Set.square subpresheaves do
+        [ for (G, H) in Set.square subobjects do
             ((G, H), isStrictSubpresheaf G H) ]
         |> Relation.ofList
 
     { Top = top
       Bot = bot
-      Subobjects = subpresheaves
+      Subobjects = subobjects
       LessEq = lessEq }
 
 /// Join of subobjects in a heyting algebra.

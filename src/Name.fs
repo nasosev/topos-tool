@@ -3,19 +3,20 @@
 module Name
 
 let yo = { String = "h" }
-let pi = { String = @"\pi" }
 let omega = { String = @"\Omega" }
 let top = { String = @"\top" }
 let bot = { String = @"\bot" }
 let ofString (s: string): Name = { String = s }
 let ofInt (i: int): Name = { String = $"{i}" }
 let name a: Name = { String = $"{a}" }
-let id (name: Name): Name = { String = $"1_{{{name.String}}}" }
+let id (A: 'A): Name = { String = $"1_{{%A{A}}}" }
 let categoryOfElements (name: Name): Name = { String = $"\int {name.String}" }
 let negate (name: Name): Name = { String = $"@!{name.String}" }
 let supplement (name: Name): Name = { String = $"~{name.String}" }
 let boundary (name: Name): Name = { String = $"\partial{name.String}" }
 let coboundary (name: Name): Name = { String = $"d{name.String}" }
+let proj (i: int) = { String = $"\pi_{i}" }
+let coproj (i: int) (name: Name) = { String = $"\iota_{i}{name.String}" }
 
 let product (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} * {name'.String}⟩" }

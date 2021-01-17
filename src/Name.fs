@@ -2,6 +2,7 @@
 [<RequireQualifiedAccess>]
 module Name
 
+let empty = { String = "" }
 let yo = { String = "h" }
 let omega = { String = @"\Omega" }
 let top = { String = @"\top" }
@@ -15,7 +16,7 @@ let negate (name: Name): Name = { String = $"@!{name.String}" }
 let supplement (name: Name): Name = { String = $"~{name.String}" }
 let boundary (name: Name): Name = { String = $"\partial{name.String}" }
 let coboundary (name: Name): Name = { String = $"d{name.String}" }
-let proj (i: int) = { String = $"\pi_{i}" }
+let proj (i: int) (name: Name) = { String = $"\pi_{i}{name.String}" }
 let coproj (i: int) (name: Name) = { String = $"\iota_{i}{name.String}" }
 
 let product (name: Name) (name': Name): Name =
@@ -61,7 +62,7 @@ let minus (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} \ {name'.String}⟩" }
 
 let pullback (name: Name) (name': Name) (name'': Name): Name =
-    { String = $"⟨{name.String} *_{{{name''.String}}} {name'.String}⟩" }
+    { String = $"⟨{name.String} *_{{{name'.String}}} {name''.String}⟩" }
 
 let pushout (name: Name) (name': Name) (name'': Name): Name =
-    { String = $"⟨{name.String} +_{{{name''.String}}} {name'.String}⟩" }
+    { String = $"⟨{name.String} +_{{{name'.String}}} {name''.String}⟩" }

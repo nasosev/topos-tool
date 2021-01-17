@@ -357,3 +357,10 @@ module Map =
 
     /// Checks if a map is submap of another.
     let isSubmap (x: Map<'A, 'B>) (y: Map<'A, 'B>): bool = (toSet x, toSet y) ||> Set.isSubset
+
+    /// Maps functions over the keys and values of a map.
+    let doubleMap (f: 'A -> 'C) (g: 'B -> 'D) (x: Map<'A, 'B>): Map<'C, 'D> =
+        x
+        |> Map.toSeq
+        |> Seq.map (fun (k, v) -> (f k, g v))
+        |> Map.ofSeq

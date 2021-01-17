@@ -12,9 +12,14 @@ module Sets =
     let cat =
         Category.make "Sets" objects arrows compose
 
+    let yo = Yoneda.yo cat
+    let hP = yo.Object P
+
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
     let (^) F G = Presheaf.exp cat G F
+
+
 
 module Bisets =
     type Bisets = Bisets of string
@@ -25,6 +30,9 @@ module Bisets =
 
     let cat =
         Category.make "Bisets" objects arrows compose
+
+    let yo = Yoneda.yo cat
+    let hP, hS = yo.Object P, yo.Object S
 
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
@@ -41,9 +49,13 @@ module Bouquets =
     let cat =
         Category.make "Bouquets" objects arrows compose
 
+    let yo = Yoneda.yo cat
+    let hV, hL = yo.Object V, yo.Object L
+
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
     let (^) F G = Presheaf.exp cat G F
+
 
 module Graphs =
     type Graphs = Graphs of string
@@ -55,6 +67,9 @@ module Graphs =
 
     let cat =
         Category.make "Graphs" objects arrows compose
+
+    let yo = Yoneda.yo cat
+    let hV, hE = yo.Object V, yo.Object E
 
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
@@ -87,6 +102,9 @@ module RGraphs =
     let cat =
         Category.make "RGraphs" objects arrows compose
 
+    let yo = Yoneda.yo cat
+    let hV, hE = yo.Object V, yo.Object E
+
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
     let (^) F G = Presheaf.exp cat G F
@@ -111,6 +129,9 @@ module TruncESets =
 
     let cat =
         Category.make "TruncESets" objects arrows compose
+
+    let yo = Yoneda.yo cat
+    let hV = yo.Object V
 
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G

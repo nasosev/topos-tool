@@ -34,7 +34,13 @@ let yo (cat: Category<'A>)
 
                       (A, x) ]
 
-        { Name = name; Mapping = mapping }
+        let dom = ob a.Dom
+        let cod = ob a.Cod
+
+        { Name = name
+          Mapping = mapping
+          Dom = dom
+          Cod = cod }
 
     { Name = Name.yo
       Object = ob

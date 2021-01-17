@@ -3,11 +3,11 @@
 module Subobject
 
 /// Subobject functor.
-/// todo: add the arrow map.
-let sub (cat: Category<'A>) = // : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), 'B> =
+let sub (cat: Category<'A>)
+        : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), Morphism<'A, 'S, 'T> -> Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>>> =
     let name = Name.ofString "Sub"
 
-    // Give a descriptive name for a subpresheaf with the specified objects and arrow maps.
+    // Gives a descriptive name for a subpresheaf with the specified objects and arrow maps.
     let nameSubpresheaf (i: int) (F: Presheaf<'A, 'S>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): Name =
         if F.Ob = ob && F.Ar = ar then Name.sub F.Name Name.top
         else if Map.exists (fun _ X -> X <> Set.empty) ob then Name.sub F.Name (Name.ofInt i)
@@ -33,9 +33,14 @@ let sub (cat: Category<'A>) = // : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presh
 
         presheaves
 
-    { Name = name
-      Object = ob
-      Arrow = lazy (failwith "todo") }
+    let ar (n: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
+        map [ for S in ob n.Cod do
+                  let inclusion = Morphism.inc S n.Cod
+                  let pb = Presheaf.pullback n inclusion
+                  let proj = (Morphism.proj1 pb).Cod
+                  (S, proj) ]
+
+    { Name = name; Object = ob; Arrow = ar }
 
 /// Determines if F is a subpresheaf of G.
 let isSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
@@ -55,6 +60,9 @@ let isStrictSubpresheaf (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
     |> Map.dom // Note this cannot be `nonidArrows`.
     |> Set.forall (fun a -> Map.isSubmap F.Ar.[a] G.Ar.[a])
 
+/// Gives the subobjects of a presheaf.
+let subobjects (cat: Category<'A>) (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> = F |> (sub cat).Object
+
 /// Gives the subalgebra of a presheaf.
 let subalgebra (cat: Category<'A>) (F: Presheaf<'A, 'S>): Subalgebra<'A, 'S> =
     let top =
@@ -66,7 +74,7 @@ let subalgebra (cat: Category<'A>) (F: Presheaf<'A, 'S>): Subalgebra<'A, 'S> =
         let name = Name.sub F.Name Name.bot
         { B with Name = name }
 
-    let subobjects = F |> (sub cat).Object
+    let subobjects = subobjects cat F
 
     let lessEq =
         [ for (G, H) in Set.square subobjects do

@@ -359,3 +359,4 @@ nb/.ipynb_checkpoints/
 scratch/
 
 nb/.vscode/
+.DS_Store

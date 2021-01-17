@@ -7,8 +7,6 @@ open FsCheck
 module DeterministicTests =
     module Bisets =
         open Examples.Bisets
-        let yo = Yoneda.yo cat
-        let hP, hS = yo.Object P, yo.Object S
 
         type Bisets =
             // Reyes p47
@@ -23,8 +21,6 @@ module DeterministicTests =
 
     module Bouquets =
         open Examples.Bouquets
-        let yo = Yoneda.yo cat
-        let hV, hL = yo.Object V, yo.Object L
 
         type Bouquets =
             // Reyes p60--62
@@ -41,13 +37,12 @@ module DeterministicTests =
                 let hV = yo.Object V
                 let hL = yo.Object L
                 let n = Morphism.hom hV hL |> Seq.exactlyOne
-                let doubleLoop = Presheaf.pushout hL n hV n hL
+                let doubleLoop = Presheaf.pushout n n
                 let endomorphisms = Morphism.hom doubleLoop doubleLoop
                 let m1 = endomorphisms |> Seq.item 0 // Careful to get the right ones!
                 let m2 = endomorphisms |> Seq.item 3 //
 
-                let K =
-                    Presheaf.equaliser doubleLoop m1 m2 doubleLoop
+                let K = Presheaf.equaliser m1 m2
 
                 Presheaf.isIso K hV
             // Reyes p47
@@ -56,7 +51,7 @@ module DeterministicTests =
                 let maps = Morphism.hom hV F
                 let n1 = maps |> Seq.item 0
                 let n2 = maps |> Seq.item 1
-                let K = Presheaf.coequaliser hV n1 n2 F
+                let K = Presheaf.coequaliser n1 n2
 
                 let J =
                     let ob =
@@ -70,8 +65,6 @@ module DeterministicTests =
 
     module Graphs =
         open Examples.Graphs
-        let yo = Yoneda.yo cat
-        let hV, hE = yo.Object V, yo.Object E
 
         type Graphs =
             // Reyes p39
@@ -99,7 +92,7 @@ module DeterministicTests =
 
                     Morphism.make "n" hV hE mapping
 
-                let K = Presheaf.pushout hE n hV m G
+                let K = Presheaf.pushout n m
 
                 let J =
                     let ob =
@@ -145,8 +138,6 @@ module DeterministicTests =
 
     module RGraphs =
         open Examples.RGraphs
-        let yo = Yoneda.yo cat
-        let hV, hE = yo.Object V, yo.Object E
 
         type RGraphs =
             // Reyes p88
@@ -195,13 +186,14 @@ module DeterministicTests =
 module RandomTests =
     // todo: pullback of monic is monic
     // todo: pasting lemma
-    
+
     // Samples an element from the input sequence.
     let sampleOne g =
         g
         |> Gen.elements
         |> Gen.sample 0 1
         |> Seq.exactlyOne
+
     // Samples a pair from the input sequence.
     let sampleTwo g =
         g
@@ -209,11 +201,13 @@ module RandomTests =
         |> Gen.two
         |> Gen.sample 0 1
         |> Seq.exactlyOne
+
     // Generates an arbitrary representable.
     let makeArbRep cat =
         let yo = Yoneda.yo cat
         let reps = cat.Objects |> Set.map yo.Object
         reps |> sampleOne
+
     // Tries to generate a random pushout of three representables.
     let tryMakeArbPushout cat =
         let F = makeArbRep cat
@@ -225,7 +219,7 @@ module RandomTests =
         if not (Set.isEmpty ns || Set.isEmpty ms) then
             let n = ns |> sampleOne
             let m = ms |> sampleOne
-            Presheaf.pushout F n H m G |> Some
+            Presheaf.pushout n m |> Some
         else
             None
 
@@ -296,14 +290,14 @@ module RandomTests =
 
         match oG with
         | Some G ->
-            let subF = (Subobject.subalgebra cat G).Subobjects
+            let subF = Subobject.subobjects cat G
             let omega = Truth.omega cat
             Set.count (Morphism.hom G omega) = Set.count subF
         | _ ->
             printfn "(a test passed vacuously)"
             true
 
-    let ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat = // Note we only test the cardinalities.
+    let ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat =
         let oG = tryMakeArbPushout cat
 
         match oG with
@@ -318,7 +312,7 @@ module RandomTests =
             printfn "(a test passed vacuously)"
             true
 
-    let ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat = // Note we only test the set cardinalities.
+    let ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat =
         let oG = tryMakeArbPushout cat
 
         match oG with

@@ -3,9 +3,11 @@
 module Types
 
 // WARNING: the order or fields in a record may have a huge performance impact!
+
 /// Type of names.
 [<StructuredFormatDisplay("{String}")>]
 type Name = { String: string }
+
 /// Type of arrows in a category between generic objects.
 ///
 [<StructuredFormatDisplay("{Name}")>]
@@ -46,15 +48,17 @@ type Presheaf<'A, 'S when 'A: comparison and 'S: comparison> =
                 if c <> 0 then c else compare x.Ar y.Ar
             | _ -> invalidArg "yobj" "cannot compare values of different types"
 
-///// Type of morphisms between presheaves.
-///// Overrides comparison so `Name` is ignored.
+/// Type of morphisms between presheaves.
+/// Overrides comparison so `Name` is ignored.
 [<CustomEquality; CustomComparison; StructuredFormatDisplay("{Name}")>]
 type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparison> =
     { Name: Name
-      Mapping: Map<'A, Map<'S, 'T>> }
+      Mapping: Map<'A, Map<'S, 'T>>
+      Dom: Presheaf<'A, 'S>
+      Cod: Presheaf<'A, 'T> }
     override x.Equals(yobj) =
         match yobj with
-        | :? (Morphism<'A, 'S, 'T>) as y -> x.Mapping = y.Mapping
+        | :? (Morphism<'A, 'S, 'T>) as y -> x.Mapping = y.Mapping && x.Cod = y.Cod // Dom is automatically equal if Mapping is for valid morphisms but we need to distinguish between codomain and image.
         | _ -> false
 
     override x.GetHashCode() = hash x.Mapping
@@ -62,7 +66,9 @@ type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparis
     interface System.IComparable with
         member x.CompareTo yobj =
             match yobj with
-            | :? (Morphism<'A, 'S, 'T>) as y -> compare x.Mapping y.Mapping
+            | :? (Morphism<'A, 'S, 'T>) as y ->
+                let c = compare x.Mapping y.Mapping
+                if c <> 0 then c else compare x.Cod y.Cod
             | _ -> invalidArg "yobj" "cannot compare values of different types"
 
 /// Type for a generic functor is just a container for an object map and an arrow map.

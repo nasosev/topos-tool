@@ -121,7 +121,7 @@ let id (dom: Presheaf<'A, 'S>): Morphism<'A, 'S, 'S> =
     lift name dom dom id
 
 /// Gives the first projection morphism from a binary product presheaf.
-let internal proj1 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'S> =
+let proj1 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'S> =
     let name = Name.proj 1 Name.empty
 
     let cod =

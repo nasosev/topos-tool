@@ -35,12 +35,12 @@ version: prerelease
   - implication/subtraction
   - negation/supplement
   - boundary/coboundary
+  - quantifiers
 - latex output
 
 ## to do
 - comma categories
 - general limits/colimits
-- quantifiers
 - modal operators
 - internal logic
 - geometric and logical morphisms

@@ -66,19 +66,19 @@ let sum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Choice<'S, 'T>
 /// F --n--> G
 ///   --m-->
 /// WARNING: does not check that domains and codomains of n and m match.
-let equaliser (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'S, 'T>): Presheaf<'A, 'S> =
-    let name = Name.equaliser n.Name m.Name
+let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 'S> =
+    let name = Name.equaliser f.Name g.Name
 
     let ob =
-        map [ for A in Map.dom n.Dom.Ob do
+        map [ for A in Map.dom f.Dom.Ob do
                   let X =
-                      Map.equaliser n.Mapping.[A] m.Mapping.[A]
+                      Map.equaliser f.Mapping.[A] g.Mapping.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom n.Dom.Ar do
-                  let x = Map.restrict n.Dom.Ar.[a] ob.[a.Cod]
+        map [ for a in Map.dom f.Dom.Ar do
+                  let x = Map.restrict f.Dom.Ar.[a] ob.[a.Cod]
                   (a, x) ]
 
     { Name = name; Ob = ob; Ar = ar }
@@ -86,19 +86,19 @@ let equaliser (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'S, 'T>): Presheaf<'A, 
 /// Pullback of presheaves, i.e. limit of the diagram
 /// F --n--> H <--m-- G
 /// WARNING: does not check that codomains of n and m match.
-let pullback (n: Morphism<'A, 'S, 'U>) (m: Morphism<'A, 'T, 'U>): Presheaf<'A, 'S * 'T> =
+let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, 'S * 'T> =
     let name =
-        Name.pullback n.Dom.Name n.Cod.Name m.Dom.Name
+        Name.pullback f.Dom.Name f.Cod.Name g.Dom.Name
 
     let ob =
-        map [ for A in Map.dom n.Cod.Ob do
-                  let X = Map.pullback n.Mapping.[A] m.Mapping.[A]
+        map [ for A in Map.dom f.Cod.Ob do
+                  let X = Map.pullback f.Mapping.[A] g.Mapping.[A]
                   (A, X) ]
 
     let ar =
-        let FG = product n.Dom m.Dom
+        let FG = product f.Dom g.Dom
 
-        map [ for a in Map.dom n.Cod.Ar do
+        map [ for a in Map.dom f.Cod.Ar do
                   let x = Map.restrict FG.Ar.[a] ob.[a.Cod]
                   (a, x) ]
 
@@ -108,22 +108,22 @@ let pullback (n: Morphism<'A, 'S, 'U>) (m: Morphism<'A, 'T, 'U>): Presheaf<'A, '
 /// F --n--> G
 ///   --m-->
 /// WARNING: does not check that domains and codomains of n and m match.
-let coequaliser (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'S, 'T>): Presheaf<'A, Set<'T>> =
-    let name = Name.coequaliser n.Name m.Name
+let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, Set<'T>> =
+    let name = Name.coequaliser f.Name g.Name
 
     let ob =
-        map [ for A in Map.dom n.Dom.Ob do
+        map [ for A in Map.dom f.Dom.Ob do
                   let X =
-                      Map.coequaliser n.Mapping.[A] m.Mapping.[A] n.Cod.Ob.[A]
+                      Map.coequaliser f.Mapping.[A] g.Mapping.[A] f.Cod.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom n.Dom.Ar do
+        map [ for a in Map.dom f.Dom.Ar do
                   let x =
                       map [ for R in ob.[a.Cod] do
                                 let rep = R |> Seq.item 0
-                                let imageRep = n.Cod.Ar.[a].[rep]
+                                let imageRep = f.Cod.Ar.[a].[rep]
 
                                 let imageClass =
                                     Seq.find (fun X -> Set.contains imageRep X) ob.[a.Dom]
@@ -137,19 +137,19 @@ let coequaliser (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'S, 'T>): Presheaf<'A
 /// Pushout of presheaves, i.e. colimit of the diagram
 /// F <--n-- H --m--> G
 /// WARNING: does not check that domains of n and m match.
-let pushout (n: Morphism<'A, 'U, 'S>) (m: Morphism<'A, 'U, 'T>): Presheaf<'A, Set<Choice<'S, 'T>>> =
+let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Set<Choice<'S, 'T>>> =
     let name =
-        Name.pushout n.Cod.Name n.Dom.Name m.Cod.Name
+        Name.pushout f.Cod.Name f.Dom.Name g.Cod.Name
 
     let ob =
-        map [ for A in Map.dom n.Dom.Ob do
+        map [ for A in Map.dom f.Dom.Ob do
                   let X =
-                      Map.pushout n.Cod.Ob.[A] n.Mapping.[A] m.Mapping.[A] m.Cod.Ob.[A]
+                      Map.pushout f.Cod.Ob.[A] f.Mapping.[A] g.Mapping.[A] g.Cod.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom n.Dom.Ar do
+        map [ for a in Map.dom f.Dom.Ar do
                   let x =
                       map [ for R in ob.[a.Cod] do
                                 let rep = R |> Seq.item 0
@@ -157,8 +157,8 @@ let pushout (n: Morphism<'A, 'U, 'S>) (m: Morphism<'A, 'U, 'T>): Presheaf<'A, Se
                                 let imageRep =
                                     rep
                                     |> (function
-                                    | Choice1Of2 s -> Choice1Of2 n.Cod.Ar.[a].[s]
-                                    | Choice2Of2 t -> Choice2Of2 m.Cod.Ar.[a].[t])
+                                    | Choice1Of2 s -> Choice1Of2 f.Cod.Ar.[a].[s]
+                                    | Choice2Of2 t -> Choice2Of2 g.Cod.Ar.[a].[t])
 
                                 let imageClass =
                                     Seq.find (fun X -> Set.contains imageRep X) ob.[a.Dom]
@@ -182,11 +182,11 @@ let exp (cat: Category<'A>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Preshea
     let ar =
         map [ for a in Map.dom F.Ar do
                   let x =
-                      map [ for n in Morphism.hom (product (yo.Object a.Cod) F) G do
-                                let m =
-                                    Morphism.compose n (Morphism.product (yo.Arrow a) (Morphism.id F))
+                      map [ for f in Morphism.hom (product (yo.Object a.Cod) F) G do
+                                let g =
+                                    Morphism.compose f (Morphism.product (yo.Arrow a) (Morphism.id F))
 
-                                (n, m) ]
+                                (f, g) ]
 
                   (a, x) ]
 

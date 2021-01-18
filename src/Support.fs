@@ -2,15 +2,29 @@
 [<AutoOpen>]
 module Support
 
-/// Builds a map from a sequence of objects.
-let map elements = Collections.Map.ofSeq elements
-
 /// Type for a binary relation between homogenous sets.
 type Relation<'A, 'B when 'A: comparison and 'B: comparison> =
     | Relation of Map<'A * 'B, bool>
     member __.Item(a: 'A, b: 'B): bool =
         let (Relation m) = __
         m.[a, b]
+
+/// Miscellaneous helper functions.
+[<AutoOpen>]
+module Helpers =
+    /// Builds a map from a sequence of objects.
+    let map elements = Collections.Map.ofSeq elements
+
+
+/// Boolean logical operators
+[<AutoOpen>]
+module BooleanLogic =
+    /// Classical implication.
+    let (=>) (p: bool) (q: bool): bool = (not p) || q
+
+    /// Equivalence.
+    let (<=>) (p: bool) (q: bool): bool = (p && q) || ((not p) && (not q))
+
 
 [<RequireQualifiedAccess>]
 module List =

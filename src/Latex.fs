@@ -3,7 +3,7 @@
 [<RequireQualifiedAccess>]
 module Latex
 
-let ofGeneric (o: obj): string =
+let ofGeneric (o: _): string =
 
     let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
 
@@ -42,7 +42,7 @@ let ofGeneric (o: obj): string =
     |> replace @"<=" @"\leq "
     |> replace "\"" " " // Remove quotes.
 
-let ofName (name: Name): string = $"\[\mathsf{{{ofGeneric name}}}\]"
+let ofName (name: Name): string = @$"\[\mathsf{{{ofGeneric name}}}\]"
 
 let ofSeq (X: seq<_>): string =
     X
@@ -79,9 +79,9 @@ let ofArrow (a: Arrow<_>): string =
         {nameof a.Dom}: {a.Dom}
         {nameof a.Cod}: {a.Cod}"
 
-let ofMorphism (n: Morphism<_, _, _>): string =
-    $"{nameof n.Name}: {ofName n.Name}
-        {nameof n.Mapping}: {ofMapMap n.Mapping}"
+let ofMorphism (f: Morphism<_, _, _>): string =
+    $"{nameof f.Name}: {ofName f.Name}
+        {nameof f.Mapping}: {ofMapMap f.Mapping}"
 
 let ofCategory (C: Category<_>): string =
     $"{nameof C.Name}: {ofName C.Name}

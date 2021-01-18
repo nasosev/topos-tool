@@ -33,10 +33,10 @@ let sub (cat: Category<'A>)
 
         presheaves
 
-    let ar (n: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
-        map [ for S in ob n.Cod do
-                  let inclusion = Morphism.inc S n.Cod
-                  let pb = Presheaf.pullback n inclusion
+    let ar (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
+        map [ for S in ob f.Cod do
+                  let inclusion = Morphism.inc S f.Cod
+                  let pb = Presheaf.pullback f inclusion
                   let proj = (Morphism.proj1 pb).Cod
                   (S, proj) ]
 
@@ -44,18 +44,10 @@ let sub (cat: Category<'A>)
 
 /// Determines if F is a subpresheaf of G.
 let isSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
-    [ for A in F.Ob |> Map.dom do
-        [ for x in Set.exp F.Ob.[A] G.Ob.[A] do
-            (A, x) ] ]
-    |> List.listProduct
-    |> List.exists (fun ls -> // Note: the order of conjunctions impacts performance due to short-circuiting.
-        let map = map ls
-
-        (map |> Map.forall (fun _ -> Map.isInjective))
-        && Morphism.isMorphism F G map)
+    Morphism.hom F G |> Set.exists Morphism.isMono
 
 /// Determines if F is a strict subpresheaf of G.
-let isStrictSubpresheaf (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
+let isStrictSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
     F.Ar
     |> Map.dom // Note this cannot be `nonidArrows`.
     |> Set.forall (fun a -> Map.isSubmap F.Ar.[a] G.Ar.[a])
@@ -78,7 +70,7 @@ let subalgebra (cat: Category<'A>) (F: Presheaf<'A, 'S>): Subalgebra<'A, 'S> =
 
     let lessEq =
         [ for (G, H) in Set.square subobjects do
-            ((G, H), isStrictSubpresheaf G H) ]
+            ((G, H), isStrictSubobject G H) ]
         |> Relation.ofList
 
     { Top = top
@@ -86,7 +78,7 @@ let subalgebra (cat: Category<'A>) (F: Presheaf<'A, 'S>): Subalgebra<'A, 'S> =
       Subobjects = subobjects
       LessEq = lessEq }
 
-/// Join of subobjects in a heyting algebra.
+/// Join of subobjects in a heyting algebra of subobjects.
 let join (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.join F.Name G.Name
 
@@ -102,10 +94,10 @@ let join (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
 
     { Name = name; Ob = ob; Ar = ar }
 
-/// Join set of subobjects in a heyting algebra.
+/// Join set of subobjects in a heyting algebra of subobjects.
 let joinMany (alg: Subalgebra<'A, 'S>) (Fs: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Fs |> Set.fold join alg.Bot
 
-/// Meet of subobjects  in a heyting algebra.
+/// Meet of subobjects  in a heyting algebra of subobjects.
 let meet (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.meet F.Name G.Name
 
@@ -121,10 +113,10 @@ let meet (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
 
     { Name = name; Ob = ob; Ar = ar }
 
-/// Meet set of subobjects in a heyting algebra.
+/// Meet set of subobjects in a heyting algebra of subobjects.
 let meetMany (alg: Subalgebra<'A, 'S>) (Fs: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Fs |> Set.fold meet alg.Top
 
-/// Implication in a heyting algebra.
+/// Implication in a heyting algebra of subobjects.
 let imply (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let H =
         alg.Subobjects
@@ -134,7 +126,7 @@ let imply (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>):
     let name = Name.imply F.Name G.Name
     H |> Presheaf.rename name
 
-/// Subtraction in a coheyting algebra.
+/// Subtraction in a coheyting algebra of subobjects.
 let minus (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let H =
         alg.Subobjects
@@ -144,29 +136,83 @@ let minus (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>):
     let name = Name.minus F.Name G.Name
     H |> Presheaf.rename name
 
-/// Negation in a heyting algebra.
+/// Negation in a heyting algebra of subobjects.
 let negate (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let H = imply alg F alg.Bot
     let name = Name.negate F.Name
     H |> Presheaf.rename name
 
-/// Supplement in a coheyting algebra.
+/// Supplement in a coheyting algebra of subobjects.
 let supplement (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let H = minus alg alg.Top F
     let name = Name.supplement F.Name
     H |> Presheaf.rename name
 
-/// Coboundary in a heyting algebra.
+/// Coboundary in a heyting algebra of subobjects.
 let coboundary (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.coboundary F.Name
     join F (negate alg F) |> Presheaf.rename name
 
-/// Boundary in a coheyting algebra.
+/// Boundary in a coheyting algebra of subobjects.
 let boundary (alg: Subalgebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.boundary F.Name
     meet (supplement alg F) F |> Presheaf.rename name
 
-/// Square in a biheyting algebra.
-/// todo
-/// Diamond in a biheyting algebra.
+/// Preimage.
+let preimage (cat: Category<'A>) (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
+    let cod = subalgebra cat f.Cod
+
+    map [ for T in cod.Subobjects do
+              let pre_f =
+                  let inc = Morphism.inc T cod.Top
+
+                  (Presheaf.pullback inc f |> Morphism.proj2).Cod
+                  |> Presheaf.rename (Name.preimage f.Name T.Name)
+
+              (T, pre_f) ]
+
+/// Existential quantification.
+let exists (cat: Category<'A>) (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
+    let dom = subobjects cat f.Dom
+
+    map [ for S in dom do
+              let ex_f =
+                  Morphism.apply f S
+                  |> Presheaf.rename (Name.exists f.Name S.Name)
+
+              (S, ex_f) ]
+
+/// Universal quantification.
+let forall (cat: Category<'A>) (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
+    let dom = subobjects cat f.Dom
+
+    map [ for S in dom do
+              let fa_f =
+                  let name = Name.forall f.Name S.Name
+
+                  let ob =
+                      let filter A t =
+                          cat.Objects
+                          |> Set.forall (fun B ->
+                              cat.Hom.[B, A]
+                              |> Set.forall (fun a ->
+                                  f.Dom.Ob.[B]
+                                  |> Set.forall (fun s ->
+                                      f.Mapping.[B].[s] = f.Cod.Ar.[a].[t]
+                                      => Set.contains s S.Ob.[B])))
+
+                      map [ for A in cat.Objects do
+                                let X = f.Cod.Ob.[A] |> Set.filter (filter A)
+                                (A, X) ]
+
+                  let ar =
+                      map [ for a in cat.Arrows do
+                                let x = Map.restrict f.Cod.Ar.[a] ob.[a.Cod]
+                                (a, x) ]
+
+                  { Name = name; Ob = ob; Ar = ar }
+
+              (S, fa_f) ]
+
+/// Square, Diamond in a biheyting algebra of subobjects. (see Reyes: Bi-heyting algebras, toposes and modalities)
 /// todo

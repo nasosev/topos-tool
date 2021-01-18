@@ -61,7 +61,7 @@ type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparis
         | :? (Morphism<'A, 'S, 'T>) as y -> x.Mapping = y.Mapping && x.Cod = y.Cod // Dom is automatically equal if Mapping is for valid morphisms but we need to distinguish between codomain and image.
         | _ -> false
 
-    override x.GetHashCode() = hash x.Mapping
+    override x.GetHashCode() = hash x.Mapping ^^^ hash x.Cod
 
     interface System.IComparable with
         member x.CompareTo yobj =

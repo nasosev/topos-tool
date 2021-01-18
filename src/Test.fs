@@ -36,22 +36,22 @@ module DeterministicTests =
                 let yo = Yoneda.yo cat
                 let hV = yo.Object V
                 let hL = yo.Object L
-                let n = Morphism.hom hV hL |> Seq.exactlyOne
-                let doubleLoop = Presheaf.pushout n n
+                let f = Morphism.hom hV hL |> Seq.exactlyOne
+                let doubleLoop = Presheaf.pushout f f
                 let endomorphisms = Morphism.hom doubleLoop doubleLoop
-                let m1 = endomorphisms |> Seq.item 0 // Careful to get the right ones!
-                let m2 = endomorphisms |> Seq.item 3 //
+                let g = endomorphisms |> Seq.item 0 // Careful to get the right ones!
+                let h = endomorphisms |> Seq.item 3 //
 
-                let K = Presheaf.equaliser m1 m2
+                let K = Presheaf.equaliser g h
 
                 Presheaf.isIso K hV
             // Reyes p47
             static member ``gluing two loops at their point by coequaliser`` =
                 let F = Presheaf.sum hL hL
                 let maps = Morphism.hom hV F
-                let n1 = maps |> Seq.item 0
-                let n2 = maps |> Seq.item 1
-                let K = Presheaf.coequaliser n1 n2
+                let f = maps |> Seq.item 0
+                let g = maps |> Seq.item 1
+                let K = Presheaf.coequaliser f g
 
                 let J =
                     let ob =
@@ -85,14 +85,14 @@ module DeterministicTests =
 
                 let m = Morphism.hom hV G |> Seq.exactlyOne
 
-                let n =
+                let f =
                     let mapping =
                         (map [ V, map [ cat.Id.[V], t ]
                                E, Map.empty ])
 
-                    Morphism.make "n" hV hE mapping
+                    Morphism.make "f" hV hE mapping
 
-                let K = Presheaf.pushout n m
+                let K = Presheaf.pushout f m
 
                 let J =
                     let ob =
@@ -327,6 +327,64 @@ module RandomTests =
             printfn "(a test passed vacuously)"
             true
 
+    let ``omega-axiom isomorphism`` cat =
+        let oG = tryMakeArbPushout cat
+
+        match oG with
+        | Some G ->
+            let subalg = (Subobject.subalgebra cat G)
+            let phi = Truth.subobjectToChar cat subalg
+            let psi = Truth.charToSubobject cat
+            let O = Truth.omega cat
+
+            (subalg.Subobjects
+             |> Set.forall (fun S -> S |> phi |> psi = S))
+            && (Morphism.hom subalg.Top O
+                |> Set.forall (fun n -> n |> psi |> phi = n))
+        | _ ->
+            printfn "(a test passed vacuously)"
+            true
+
+    let ``exists-preimage-forall adjunction`` cat =
+        let oG = tryMakeArbPushout cat
+        let oH = tryMakeArbPushout cat
+
+        match (oG, oH) with
+        | (Some G, Some H) ->
+            let hom = Morphism.hom G H
+
+            if Set.isEmpty hom then
+                printfn "(a test passed vacuously)"
+                true
+            else
+                let f = hom |> sampleOne
+
+                let pi = Subobject.preimage cat f
+                let ex = Subobject.exists cat f
+                let fa = Subobject.forall cat f
+
+                let subalgG = Subobject.subalgebra cat G
+                let subalgH = Subobject.subalgebra cat H
+
+                let subG = subalgG.Subobjects
+                let subH = subalgH.Subobjects
+
+                let adjunction1 (S, T) =
+                    subalgH.LessEq.[ex.[S], T]
+                    <=> subalgG.LessEq.[S, pi.[T]]
+
+                let adjunction2 (S, T) =
+                    subalgH.LessEq.[T, fa.[S]]
+                    <=> subalgG.LessEq.[pi.[T], S]
+
+                (subG, subH)
+                ||> Set.product
+                |> Set.forall (fun ST -> adjunction1 ST && adjunction2 ST)
+
+        | _ ->
+            printfn "(a test passed vacuously)"
+            true
+
     module Sets =
         open Examples.Sets
 
@@ -343,6 +401,10 @@ module RandomTests =
             static member ``(Sets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(Sets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(Sets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            static member ``(Sets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``(Sets) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
 
     module Bisets =
         open Examples.Bisets
@@ -361,6 +423,11 @@ module RandomTests =
             static member ``(Bisets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(Bisets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
 
+            static member ``(Bisets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``(Bisets) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
+
     module Bouquets =
         open Examples.Bouquets
 
@@ -377,6 +444,10 @@ module RandomTests =
             static member ``(Bouquets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(Bouquets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(Bouquets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            static member ``(Bouquets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``(Bouquets) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
 
     module Graphs =
         open Examples.Graphs
@@ -394,6 +465,10 @@ module RandomTests =
             static member ``(Graphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(Graphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(Graphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``(Graphs) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
 
     module RGraphs =
         open Examples.RGraphs
@@ -411,6 +486,10 @@ module RandomTests =
             static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(RGraphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(RGraphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            static member ``(RGraphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``(RGraphs) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
 
     module TruncESets =
         open Examples.TruncESets
@@ -428,7 +507,10 @@ module RandomTests =
             static member ``(TruncESets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
             static member ``(TruncESets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
             static member ``(TruncESets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+            static member ``(TruncESets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
+            static member ``(TruncESets) exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
 
 let testDeterministic () =
     let config = { Config.Default with MaxTest = 1 }

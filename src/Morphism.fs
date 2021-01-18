@@ -26,17 +26,17 @@ let make (nameString: string)
       Cod = cod }
 
 /// Determines if the morphism is mono.
-let isMono (n: Morphism<'A, 'S, 'T>): bool =
-    n.Mapping |> Map.forall (fun _ -> Map.isInjective)
+let isMono (f: Morphism<'A, 'S, 'T>): bool =
+    f.Mapping |> Map.forall (fun _ -> Map.isInjective)
 
 /// Determines if the morphism is epi.
-let isEpi (n: Morphism<'A, 'S, 'T>): bool =
-    n.Mapping
-    |> Map.forall (fun A x -> Map.isSurjective x n.Cod.Ob.[A])
+let isEpi (f: Morphism<'A, 'S, 'T>): bool =
+    f.Mapping
+    |> Map.forall (fun A x -> Map.isSurjective x f.Cod.Ob.[A])
 
 /// Determines if the morphism is an isomorphism.
 // Note: the order of conjunctions impacts performance due to short-circuiting.
-let isIso (n: Morphism<'A, 'S, 'T>): bool = isEpi n && isMono n
+let isIso (f: Morphism<'A, 'S, 'T>): bool = isEpi f && isMono f
 
 
 /// External hom of presheaves.
@@ -61,13 +61,13 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
 let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> = hom dom cod |> Set.filter isIso
 
 /// Applies a morphism to a presheaf.
-let apply (n: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
-    let name = Name.compose n.Name dom.Name
+let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
+    let name = Name.compose f.Name dom.Name
 
     let ob =
         map [ for A in Map.dom dom.Ob do
                   let X =
-                      Set.map (fun x -> n.Mapping.[A].[x]) dom.Ob.[A]
+                      Set.map (fun x -> f.Mapping.[A].[x]) dom.Ob.[A]
 
                   (A, X) ]
 
@@ -75,25 +75,25 @@ let apply (n: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
         map [ for a in Map.dom dom.Ar do
                   let x =
                       map [ for x in dom.Ob.[a.Cod] do
-                                (n.Mapping.[a.Cod].[x], n.Mapping.[a.Dom].[dom.Ar.[a].[x]]) ]
+                                (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[dom.Ar.[a].[x]]) ]
 
                   (a, x) ]
 
     { Name = name; Ob = ob; Ar = ar }
 
 /// Composition of morphisms.
-let compose (n: Morphism<'A, 'T, 'U>) (m: Morphism<'A, 'S, 'T>): Morphism<'A, 'S, 'U> =
-    let name = Name.compose n.Name m.Name
+let compose (g: Morphism<'A, 'T, 'U>) (f: Morphism<'A, 'S, 'T>): Morphism<'A, 'S, 'U> =
+    let name = Name.compose g.Name f.Name
 
     let mapping =
-        map [ for A in Map.dom n.Mapping do
-                  let x = Map.compose n.Mapping.[A] m.Mapping.[A]
+        map [ for A in Map.dom g.Mapping do
+                  let x = Map.compose g.Mapping.[A] f.Mapping.[A]
                   (A, x) ]
 
     { Name = name
       Mapping = mapping
-      Dom = m.Dom
-      Cod = n.Cod }
+      Dom = f.Dom
+      Cod = g.Cod }
 
 /// Lifts a function to a morphism.
 let lift (name: Name) (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (f: 'S -> 'T): Morphism<'A, 'S, 'T> =
@@ -189,16 +189,16 @@ let internal presheafSum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'
     { Name = name; Ob = ob; Ar = ar }
 
 /// Binary product of morphisms.
-let product (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'U, 'D>): Morphism<'A, ('S * 'U), ('T * 'D)> =
-    let name = Name.product n.Name m.Name
+let product (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, ('S * 'U), ('T * 'D)> =
+    let name = Name.product f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom n.Mapping do
-                  let x = Map.product n.Mapping.[A] m.Mapping.[A]
+        map [ for A in Map.dom f.Mapping do
+                  let x = Map.product f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 
-    let dom = presheafProduct n.Dom m.Dom
-    let cod = presheafProduct n.Cod m.Cod
+    let dom = presheafProduct f.Dom g.Dom
+    let cod = presheafProduct f.Cod g.Cod
 
 
     { Name = name
@@ -207,16 +207,16 @@ let product (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'U, 'D>): Morphism<'A, ('
       Cod = cod }
 
 /// Binary sum of morphisms.
-let sum (n: Morphism<'A, 'S, 'T>) (m: Morphism<'A, 'U, 'D>): Morphism<'A, Choice<'S, 'U>, Choice<'T, 'D>> =
-    let name = Name.sum n.Name m.Name
+let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice<'S, 'U>, Choice<'T, 'D>> =
+    let name = Name.sum f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom n.Mapping do
-                  let x = Map.sum n.Mapping.[A] m.Mapping.[A]
+        map [ for A in Map.dom f.Mapping do
+                  let x = Map.sum f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 
-    let dom = presheafSum n.Dom m.Dom
-    let cod = presheafSum n.Cod m.Cod
+    let dom = presheafSum f.Dom g.Dom
+    let cod = presheafSum f.Cod g.Cod
 
     { Name = name
       Mapping = mapping

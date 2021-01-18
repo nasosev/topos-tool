@@ -71,9 +71,7 @@ let make (nameStr: string)
          let composable (a: Arrow<'A>, b: Arrow<'A>): bool = b.Cod = a.Dom
 
          pairs
-         |> Set.forall (fun ab ->
-             (not (composable ab))
-             || Set.contains ab composeDomain)) then
+         |> Set.forall (fun ab -> composable ab => Set.contains ab composeDomain)) then
         failwith "Not all composable pairs appear in the compose map." // Check all composable pairs appear in the composition map.
 
     { Name = name

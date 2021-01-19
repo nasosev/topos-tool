@@ -2,7 +2,7 @@
 module Truth
 
 /// Truth object of a category.
-let omega (cat: Category<'A>): Presheaf<'A, Presheaf<'A, Arrow<'A>>> =
+let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
     let yo = Yoneda.yo cat
 
     let ob =
@@ -28,7 +28,7 @@ let omega (cat: Category<'A>): Presheaf<'A, Presheaf<'A, Arrow<'A>>> =
     { Name = Name.omega; Ob = ob; Ar = ar }
 
 /// Truth value of the truth object.
-let truth (cat: Category<'A>): Morphism<'A, unit, Presheaf<'A, Arrow<'A>>> =
+let truth (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let name = Name.top
 
     let mapping =
@@ -49,14 +49,18 @@ let truth (cat: Category<'A>): Morphism<'A, unit, Presheaf<'A, Arrow<'A>>> =
       Cod = cod }
 
 /// False value of the truth object.
-let falsity (cat: Category<'A>): Morphism<'A, unit, Presheaf<'A, Arrow<'A>>> =
+let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let name = Name.bot
 
     let mapping =
-        let zero = Presheaf.zero cat
+        let yo = Yoneda.yo cat
 
         map [ for A in cat.Objects do
-                  let x = map [ ((), zero) ]
+                  let hA_bot =
+                      (yo.Object A |> Subobject.subalgebra cat).Bot
+
+                  let x = map [ ((), hA_bot) ]
+
                   (A, x) ]
 
     let dom = Presheaf.one cat
@@ -68,27 +72,23 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Presheaf<'A, Arrow<'A>>> =
       Cod = cod }
 
 /// Characteristic morphism to subobject.
-let charToSubobject (cat: Category<'A>) (c: Morphism<'A, 'S, Presheaf<'A, Arrow<'A>>>): Presheaf<'A, 'S> =
+let charToSubobject (cat: Category<'A>) (c: Morphism<'A, 'S, Heart<'A>>): Presheaf<'A, 'S> =
     let t = truth cat
     let pb = Presheaf.pullback c t
     (Morphism.proj1 pb).Cod
 
 /// Subobject to characteristic morphism.
-let subobjectToChar (cat: Category<'A>)
-                    (subalg: Subalgebra<'A, 'S>)
-                    (S: Presheaf<'A, 'S>)
-                    : Morphism<'A, 'S, Presheaf<'A, Arrow<'A>>> =
+let subobjectToChar (cat: Category<'A>) (top: Presheaf<'A, 'S>) (S: Presheaf<'A, 'S>): Morphism<'A, 'S, Heart<'A>> =
     let name = Name.char S.Name
-    let dom = subalg.Top
     let cod = omega cat
 
     let mapping =
         map [ for A in cat.Objects do
                   let x =
-                      map [ for s in dom.Ob.[A] do
+                      map [ for s in top.Ob.[A] do
                                 let cs =
                                     let filter (a: Arrow<'A>): bool =
-                                        S.Ob.[a.Dom] |> Set.contains dom.Ar.[a].[s]
+                                        S.Ob.[a.Dom] |> Set.contains top.Ar.[a].[s]
 
                                     let ob =
                                         map [ for B in cat.Objects do
@@ -112,15 +112,28 @@ let subobjectToChar (cat: Category<'A>)
 
     { Name = name
       Mapping = mapping
-      Dom = dom
+      Dom = top
       Cod = cod }
 
-/// Internal AND.
-let internalAnd (cat: Category<'A>)
-                : Morphism<'A, Presheaf<'A, Arrow<'A>> * Presheaf<'A, Arrow<'A>>, Presheaf<'A, Arrow<'A>>> =
-    failwith "todo"
+/// Internal NOT. (p139 Goldblatt.)
+let internalNot (cat: Category<'A>): Morphism<'A, Heart<'A>, Heart<'A>> =
+    let L = cat |> falsity |> Morphism.image
+    let Om = omega cat
+    L |> subobjectToChar cat Om
 
-/// Internal OR.
-let internalOr (cat: Category<'A>)
-               : Morphism<'A, Presheaf<'A, Arrow<'A>> * Presheaf<'A, Arrow<'A>>, Presheaf<'A, Arrow<'A>>> =
-    failwith "todo"
+/// Internal AND. (p139 Goldblatt.)
+let internalAnd (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> =
+    let t = cat |> truth
+
+    let TT =
+        (t, t) ||> Morphism.tuple |> Morphism.image
+
+    let Om = omega cat
+    let OmOm = (Om, Om) ||> Presheaf.product
+    TT |> subobjectToChar cat OmOm
+
+/// Internal OR. (p139 Goldblatt.)
+let internalOr (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> = failwith "todo"
+
+/// Internal IMPLIES. (p139 Goldblatt.)
+let internalImplies (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> = failwith "todo"

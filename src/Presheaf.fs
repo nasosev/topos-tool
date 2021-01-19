@@ -65,7 +65,7 @@ let sum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Choice<'S, 'T>
 /// Equaliser of presheaves, i.e. limit of the diagram
 /// F --n--> G
 ///   --m-->
-/// WARNING: does not check that domains and codomains of n and m match.
+/// WARNING: does not check that domains and codomains of f and g match.
 let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 'S> =
     let name = Name.equaliser f.Name g.Name
 
@@ -85,7 +85,7 @@ let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 
 
 /// Pullback of presheaves, i.e. limit of the diagram
 /// F --n--> H <--m-- G
-/// WARNING: does not check that codomains of n and m match.
+/// WARNING: does not check that codomains of f and g match.
 let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, 'S * 'T> =
     let name =
         Name.pullback f.Dom.Name f.Cod.Name g.Dom.Name
@@ -107,7 +107,7 @@ let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, '
 /// Coequaliser of presheaves, i.e. colimit of the diagram
 /// F --n--> G
 ///   --m-->
-/// WARNING: does not check that domains and codomains of n and m match.
+/// WARNING: does not check that domains and codomains of f and g match.
 let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, Set<'T>> =
     let name = Name.coequaliser f.Name g.Name
 
@@ -122,7 +122,7 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
         map [ for a in Map.dom f.Dom.Ar do
                   let x =
                       map [ for R in ob.[a.Cod] do
-                                let rep = R |> Seq.item 0
+                                let rep = R |> Seq.item 0 // R is inhabited.
                                 let imageRep = f.Cod.Ar.[a].[rep]
 
                                 let imageClass =
@@ -136,7 +136,7 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
 
 /// Pushout of presheaves, i.e. colimit of the diagram
 /// F <--n-- H --m--> G
-/// WARNING: does not check that domains of n and m match.
+/// WARNING: does not check that domains of f and g match.
 let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Set<Choice<'S, 'T>>> =
     let name =
         Name.pushout f.Cod.Name f.Dom.Name g.Cod.Name
@@ -152,7 +152,7 @@ let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Se
         map [ for a in Map.dom f.Dom.Ar do
                   let x =
                       map [ for R in ob.[a.Cod] do
-                                let rep = R |> Seq.item 0
+                                let rep = R |> Seq.item 0 // R is inhabited.
 
                                 let imageRep =
                                     rep
@@ -193,19 +193,12 @@ let exp (cat: Category<'A>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Preshea
     { Name = name; Ob = ob; Ar = ar }
 
 /// Determines if two presheaves are isomorphic.
-/// Note: doesn't use some constructs from `Morphism` for performance reasons. Can probably be improved more.
 let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
     [ for A in Map.dom F.Ob do
-        [ for x in Set.exp F.Ob.[A] G.Ob.[A] do
+        [ for x in Map.iso F.Ob.[A] G.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.exists (fun ls -> // Note: the order of conjunctions impacts performance due to short-circuiting.
-        let mapping = map ls
-
-        (mapping
-         |> Map.forall (fun A x -> Map.isSurjective x G.Ob.[A] && Map.isInjective x))
-        && Morphism.isMorphism F G mapping)
-
+    |> List.exists (map >> Morphism.isMorphism F G)
 
 /// Renames the input presheaf with a name of an identical element in the simplification set.
 let simplify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presheaf<'A, 'S> =

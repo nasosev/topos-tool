@@ -32,24 +32,24 @@ let isMono (f: Morphism<'A, 'S, 'T>): bool =
 /// Determines if the morphism is epi.
 let isEpi (f: Morphism<'A, 'S, 'T>): bool =
     f.Mapping
-    |> Map.forall (fun A x -> Map.isSurjective x f.Cod.Ob.[A])
+    |> Map.forall (fun A x -> Map.isSurjective f.Cod.Ob.[A] x)
 
 /// Determines if the morphism is an isomorphism.
 // Note: the order of conjunctions impacts performance due to short-circuiting.
 let isIso (f: Morphism<'A, 'S, 'T>): bool = isEpi f && isMono f
 
-
 /// External hom of presheaves.
 let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
     [ for A in Map.dom dom.Ob do
-        [ for x in Set.exp dom.Ob.[A] cod.Ob.[A] do
+        [ for x in Map.exp dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.map map
-    |> List.filter (isMorphism dom cod)
-    |> List.mapi (fun i mapping ->
+    |> List.filter (map >> isMorphism dom cod)
+    |> List.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
+
+        let mapping = map ls
 
         { Name = name
           Mapping = mapping
@@ -58,7 +58,23 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
     |> set
 
 /// Gives the set of isomorphisms between two presheaves.
-let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> = hom dom cod |> Set.filter isIso
+let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
+    [ for A in Map.dom dom.Ob do
+        [ for x in Map.iso dom.Ob.[A] cod.Ob.[A] do
+            (A, x) ] ]
+    |> List.listProduct
+    |> List.filter (map >> isMorphism dom cod)
+    |> List.mapi (fun i ls ->
+        let name =
+            Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
+
+        let mapping = map ls
+
+        { Name = name
+          Mapping = mapping
+          Dom = dom
+          Cod = cod })
+    |> set
 
 /// Applies a morphism to a presheaf.
 let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
@@ -76,6 +92,27 @@ let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
                   let x =
                       map [ for x in dom.Ob.[a.Cod] do
                                 (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[dom.Ar.[a].[x]]) ]
+
+                  (a, x) ]
+
+    { Name = name; Ob = ob; Ar = ar }
+
+/// Image of a morphism.
+let image (f: Morphism<'A, 'S, 'T>): Presheaf<'A, 'T> =
+    let name = Name.compose f.Name f.Dom.Name
+
+    let ob =
+        map [ for A in Map.dom f.Dom.Ob do
+                  let X =
+                      Set.map (fun x -> f.Mapping.[A].[x]) f.Dom.Ob.[A]
+
+                  (A, X) ]
+
+    let ar =
+        map [ for a in Map.dom f.Dom.Ar do
+                  let x =
+                      map [ for x in f.Dom.Ob.[a.Cod] do
+                                (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[f.Dom.Ar.[a].[x]]) ]
 
                   (a, x) ]
 
@@ -200,7 +237,6 @@ let product (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, ('
     let dom = presheafProduct f.Dom g.Dom
     let cod = presheafProduct f.Cod g.Cod
 
-
     { Name = name
       Mapping = mapping
       Dom = dom
@@ -217,6 +253,42 @@ let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice
 
     let dom = presheafSum f.Dom g.Dom
     let cod = presheafSum f.Cod g.Cod
+
+    { Name = name
+      Mapping = mapping
+      Dom = dom
+      Cod = cod }
+
+/// Tuple of morphisms.
+let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, ('T * 'U)> =
+    if f.Dom <> g.Dom then failwith "Cannot tuple morphisms with different domains."
+    let name = Name.tuple f.Name g.Name
+
+    let mapping =
+        map [ for A in Map.dom f.Mapping do
+                  let x = Map.tuple f.Mapping.[A] g.Mapping.[A]
+                  (A, x) ]
+
+    let dom = f.Dom
+    let cod = presheafProduct f.Cod g.Cod
+
+    { Name = name
+      Mapping = mapping
+      Dom = dom
+      Cod = cod }
+
+/// Cotuple of morphisms.
+let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Choice<'T, 'U>, 'S> =
+    if f.Cod <> g.Cod then failwith "Cannot cotuple morphisms with different codomains."
+    let name = Name.cotuple f.Name g.Name
+
+    let mapping =
+        map [ for A in Map.dom f.Mapping do
+                  let x = Map.cotuple f.Mapping.[A] g.Mapping.[A]
+                  (A, x) ]
+
+    let dom = presheafSum f.Dom g.Dom
+    let cod = f.Cod
 
     { Name = name
       Mapping = mapping

@@ -262,7 +262,7 @@ module RandomTests =
 
         (f, g) ||> Gen.map2 Presheaf.pushout
 
-    // Generates a coequaliser of pushouts of representables..
+    // Generates a coequaliser of pushouts of binary products of representables.
     let genCoequaliser cat =
         cat
         |> genSimplePushout
@@ -341,7 +341,7 @@ module RandomTests =
     let ``omega-axiom isomorphism`` cat =
         let F = genCoequaliser cat |> sample
         let subalg = (Subobject.subalgebra cat F)
-        let phi = Truth.subobjectToChar cat subalg
+        let phi = Truth.subobjectToChar cat subalg.Top
         let psi = Truth.charToSubobject cat
         let Om = Truth.omega cat
 
@@ -372,6 +372,13 @@ module RandomTests =
         ||> Set.product
         |> Set.forall (fun ST -> adjunction1 ST && adjunction2 ST)
 
+    let ``double negation morphism is modality`` cat =
+        let neg = Truth.internalNot cat
+
+        (neg, neg)
+        ||> Morphism.compose
+        |> Topology.isModality cat
+
     // todo: pullback of monic is monic
     // todo: pasting lemma
 
@@ -401,6 +408,9 @@ module RandomTests =
             static member ``(Sets) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
+            static member ``(Sets) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
+
     module Bisets =
         open Examples.Bisets
 
@@ -426,6 +436,9 @@ module RandomTests =
 
             static member ``(Bisets) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
+
+            static member ``(Bisets) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
 
     module Bouquets =
         open Examples.Bouquets
@@ -453,6 +466,9 @@ module RandomTests =
             static member ``(Bouquets) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
+            static member ``(Bouquets) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
+
     module Graphs =
         open Examples.Graphs
 
@@ -478,6 +494,9 @@ module RandomTests =
 
             static member ``(Graphs) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
+
+            static member ``(Graphs) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
 
     module RGraphs =
         open Examples.RGraphs
@@ -505,6 +524,9 @@ module RandomTests =
             static member ``(RGraphs) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
+            static member ``(RGraphs) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
+
     module TruncESets =
         open Examples.TruncESets
 
@@ -530,6 +552,9 @@ module RandomTests =
 
             static member ``(TruncESets) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
+
+            static member ``(TruncESets) double negation morphism is modality`` =
+                ``double negation morphism is modality`` cat
 
 let testDeterministic () =
     let config = { Config.Default with MaxTest = 1 }

@@ -48,6 +48,9 @@ type Presheaf<'A, 'S when 'A: comparison and 'S: comparison> =
                 if c <> 0 then c else compare x.Ar y.Ar
             | _ -> invalidArg "yobj" "cannot compare values of different types"
 
+/// Alias for the kind of truth objects.
+type Heart<'A when 'A: comparison> = Presheaf<'A, Arrow<'A>>
+
 /// Type of morphisms between presheaves.
 /// Overrides comparison so `Name` is ignored.
 [<CustomEquality; CustomComparison; StructuredFormatDisplay("{Name}")>]

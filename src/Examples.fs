@@ -19,8 +19,6 @@ module Sets =
     let (+) F G = Presheaf.sum F G
     let (^) F G = Presheaf.exp cat G F
 
-
-
 module Bisets =
     type Bisets = Bisets of string
     let P, S = Bisets "P", Bisets "S"
@@ -55,7 +53,6 @@ module Bouquets =
     let (*) F G = Presheaf.product F G
     let (+) F G = Presheaf.sum F G
     let (^) F G = Presheaf.exp cat G F
-
 
 module Graphs =
     type Graphs = Graphs of string

@@ -32,6 +32,12 @@ let forall (name: Name) (name': Name) =
 let product (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} * {name'.String}⟩" }
 
+let tuple (name: Name) (name': Name): Name =
+    { String = $"({name.String}, {name'.String})" }
+
+let cotuple (name: Name) (name': Name): Name =
+    { String = $"⟦{name.String}, {name'.String}⟧" }
+
 let sum (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} + {name'.String}⟩" }
 
@@ -46,6 +52,9 @@ let equaliser (name: Name) (name': Name): Name =
 
 let coequaliser (name: Name) (name': Name): Name =
     { String = $"Coeq [{name.String}, {name'.String}]" }
+
+let apply (name: Name) (name': Name): Name =
+    { String = $"{name.String} {name'.String}" }
 
 let compose (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} @ {name'.String}⟩" }

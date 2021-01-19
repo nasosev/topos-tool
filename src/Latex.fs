@@ -25,10 +25,12 @@ let ofGeneric (o: _): string =
     |> replace @"set " @" "
     |> replace @"[" @"\lbrace " // Lists and sets will both have braces.
     |> replace @"]" @"\rbrace " //
+    |> replace @"⟦" @"[ " // (Unicode character) Cotuples will have square brackets.
+    |> replace @"⟧" @"] " // (Unicode character)
     |> replace @"(" @"\langle "
     |> replace @")" @"\rangle "
-    |> replace @"⟨" "( "
-    |> replace @"⟩" @") "
+    |> replace @"⟨" "( " // (Unicode character)
+    |> replace @"⟩" @") " // (Unicode character)
     |> replace @";" @", "
     |> replace @"..." @"\ldots "
     |> replace @"->" @"\to "
@@ -81,6 +83,8 @@ let ofArrow (a: Arrow<_>): string =
 
 let ofMorphism (f: Morphism<_, _, _>): string =
     $"{nameof f.Name}: {ofName f.Name}
+        {nameof f.Dom}: {ofName f.Dom.Name}
+        {nameof f.Cod}: {ofName f.Cod.Name}
         {nameof f.Mapping}: {ofMapMap f.Mapping}"
 
 let ofCategory (C: Category<_>): string =

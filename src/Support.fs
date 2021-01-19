@@ -15,7 +15,6 @@ module Helpers =
     /// Builds a map from a sequence of objects.
     let map elements = Collections.Map.ofSeq elements
 
-
 /// Boolean logical operators
 [<AutoOpen>]
 module BooleanLogic =
@@ -25,12 +24,11 @@ module BooleanLogic =
     /// Equivalence.
     let (<=>) (p: bool) (q: bool): bool = (p && q) || ((not p) && (not q))
 
-
 [<RequireQualifiedAccess>]
 module List =
 
     /// Binary product of lists.
-    let product (xs: seq<'A>) (ys: seq<'B>): List<'A * 'B> =
+    let product (xs: List<'A>) (ys: List<'B>): List<'A * 'B> =
         [ for x in xs do
             for y in ys do
                 (x, y) ]
@@ -49,7 +47,10 @@ module List =
 module Set =
 
     /// Binary product of sets.
-    let product (X: Set<'A>) (Y: Set<'B>): Set<'A * 'B> = List.product X Y |> set
+    let product (X: Set<'A>) (Y: Set<'B>): Set<'A * 'B> =
+        (Set.toList X, Set.toList Y)
+        ||> List.product
+        |> set
 
     /// Square of sets.
     let square (X: Set<'A>): Set<'A * 'A> = product X X
@@ -66,22 +67,6 @@ module Set =
         set [ yield X
               for s in X do
                   yield! powerset (Set.remove s X) ]
-
-    /// Exponential of sets, i.e. set of functions X -> Y.
-    let exp (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
-        if X = Set.empty then
-            set [ Map.empty ]
-        else
-            let xs = Set.toList X
-            let ys = Set.toList Y
-
-            let yys =
-                ys
-                |> List.replicate (Set.count X)
-                |> List.listProduct
-
-            set [ for y in yys do
-                      List.zip xs y |> map ]
 
     /// Partitions a set into equivalence classes from an equivalence relation.
     let partitionByEquivalence (equal: Relation<'A, 'A>) (X: Set<'A>): Set<Set<'A>> =
@@ -294,7 +279,10 @@ module Map =
         |> List.forall (snd >> List.length >> ((>) 2))
 
     /// Checks if a map is surjective.
-    let isSurjective (x: Map<'A, 'B>) (cod: Set<'B>): bool = image x = cod
+    let isSurjective (cod: Set<'B>) (x: Map<'A, 'B>): bool = image x = cod
+
+    /// Checks if a map is bijective.
+    let isBijective (cod: Set<'B>) (x: Map<'A, 'B>): bool = isSurjective cod x && isInjective x
 
     /// Binary product of maps.
     let product (x: Map<'A, 'C>) (y: Map<'B, 'D>): Map<'A * 'B, 'C * 'D> =
@@ -313,6 +301,24 @@ module Map =
                   match z with
                   | Choice1Of2 u -> (Choice1Of2 u, Choice1Of2 x.[u])
                   | Choice2Of2 v -> (Choice2Of2 v, Choice2Of2 y.[v]) ]
+
+    /// Binary tuple of maps.
+    let tuple (x: Map<'A, 'B>) (y: Map<'A, 'C>): Map<'A, 'B * 'C> =
+        if dom x <> dom y
+        then failwith "Cannot tuple maps with different domains."
+
+        map [ for a in dom x do
+                  (a, (x.[a], y.[a])) ]
+
+    /// Binary tuple of maps.
+    let cotuple (x: Map<'B, 'A>) (y: Map<'C, 'A>): Map<Choice<'B, 'C>, 'A> =
+        map [ for bc in Set.sum (dom x) (dom y) do
+                  let im =
+                      match bc with
+                      | Choice1Of2 b -> x.[b]
+                      | Choice2Of2 c -> y.[c]
+
+                  (bc, im) ]
 
     /// Equaliser of maps.
     let equaliser (x: Map<'A, 'C>) (y: Map<'A, 'C>): Set<'A> =
@@ -375,6 +381,26 @@ module Map =
     /// Maps functions over the keys and values of a map.
     let doubleMap (f: 'A -> 'C) (g: 'B -> 'D) (x: Map<'A, 'B>): Map<'C, 'D> =
         x
-        |> Map.toSeq
-        |> Seq.map (fun (k, v) -> (f k, g v))
-        |> Map.ofSeq
+        |> Map.toList
+        |> List.map (fun (k, v) -> (f k, g v))
+        |> Map.ofList
+
+    /// Exponential of sets, i.e. set of functions X -> Y.
+    let exp (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
+        if X = Set.empty then
+            set [ Map.empty ]
+        else
+            let xs = Set.toList X
+            let ys = Set.toList Y
+
+            ys
+            |> List.replicate (Set.count X)
+            |> List.listProduct
+            |> List.map (List.zip xs >> map)
+            |> set
+
+    /// Set of bijections X -> Y.
+    let iso (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
+        if Set.count X <> Set.count Y
+        then set []
+        else (X, Y) ||> exp |> Set.filter (isBijective Y)

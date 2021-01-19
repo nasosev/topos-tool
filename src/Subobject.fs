@@ -214,5 +214,5 @@ let forall (cat: Category<'A>) (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, 
 
               (S, fa_f) ]
 
-/// Square, Diamond in a biheyting algebra of subobjects. (see Reyes: Bi-heyting algebras, toposes and modalities)
+/// Square, Diamond in a biheyting algebra of subobjects. (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
 /// todo

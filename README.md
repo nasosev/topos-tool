@@ -36,6 +36,7 @@ version: prerelease
   - negation/supplement
   - boundary/coboundary
   - quantifiers
+- lawvere-tierney topologies
 - latex output
 
 ## to do
@@ -44,10 +45,13 @@ version: prerelease
 - modal operators
 - internal logic
 - geometric and logical morphisms
-- lawvere-tierney topologies and sheaves
+- j-sheaves
 - ...
 
 
 ## references
 - Marie La Palme Reyes, Gonzalo E. Reyes, Houman Zolfaghari, _Generic figures and their glueings. A constructive approach to functor categories_, Polimetrica (2008), ISBN: 8876990046. [pdf](https://marieetgonzalo.files.wordpress.com/2004/06/generic-figures.pdf).
 - Saunders Mac Lane, Ieke Moerdijk, _Sheaves in geometry and logic. A first introduction to topos theory_, Springer-Verlag (1994), ISBN: 0-387-97710-4.
+
+## acknowledgements
+- thanks to the awesome f# community at [fsharp.slack.com](http://fsharp.slack.com) for their guidance.

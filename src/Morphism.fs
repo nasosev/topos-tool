@@ -98,25 +98,7 @@ let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
     { Name = name; Ob = ob; Ar = ar }
 
 /// Image of a morphism.
-let image (f: Morphism<'A, 'S, 'T>): Presheaf<'A, 'T> =
-    let name = Name.compose f.Name f.Dom.Name
-
-    let ob =
-        map [ for A in Map.dom f.Dom.Ob do
-                  let X =
-                      Set.map (fun x -> f.Mapping.[A].[x]) f.Dom.Ob.[A]
-
-                  (A, X) ]
-
-    let ar =
-        map [ for a in Map.dom f.Dom.Ar do
-                  let x =
-                      map [ for x in f.Dom.Ob.[a.Cod] do
-                                (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[f.Dom.Ar.[a].[x]]) ]
-
-                  (a, x) ]
-
-    { Name = name; Ob = ob; Ar = ar }
+let image (f: Morphism<'A, 'S, 'T>): Presheaf<'A, 'T> = apply f f.Dom
 
 /// Composition of morphisms.
 let compose (g: Morphism<'A, 'T, 'U>) (f: Morphism<'A, 'S, 'T>): Morphism<'A, 'S, 'U> =

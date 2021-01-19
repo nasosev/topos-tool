@@ -31,6 +31,7 @@ module DeterministicTests =
 
             static member ``2hV ^ 2hV = 4hL`` =
                 Presheaf.isIso ((hV + hV) ^ (hV + hV)) (hL + hL + hL + hL)
+
             // Reyes p41
             static member ``equaliser of double loops endomaps`` =
                 let yo = Yoneda.yo cat
@@ -41,10 +42,9 @@ module DeterministicTests =
                 let endomorphisms = Morphism.hom doubleLoop doubleLoop
                 let g = endomorphisms |> Seq.item 0 // Careful to get the right ones!
                 let h = endomorphisms |> Seq.item 3 //
-
                 let K = Presheaf.equaliser g h
-
                 Presheaf.isIso K hV
+
             // Reyes p47
             static member ``gluing two loops at their point by coequaliser`` =
                 let F = Presheaf.sum hL hL
@@ -67,11 +67,14 @@ module DeterministicTests =
         open Examples.Graphs
 
         type Graphs =
+
             // Reyes p39
             static member ``hV + hV = hV * hE`` = Presheaf.isIso (hV + hV) (hV * hE)
+
             // Reyes p40
             static member ``hE * hE = 2hV + hE`` =
                 Presheaf.isIso (hE * hE) (hE + (hV + hV))
+
             // Reyes p51
             static member ``gluing a loop to the tip of an arrow by pushout`` =
                 let G =
@@ -106,6 +109,7 @@ module DeterministicTests =
                     Presheaf.make "J" cat ob ar
 
                 Presheaf.isIso J K
+
             // Reyes p88
             static member Omega_Graphs =
                 let F =
@@ -140,6 +144,7 @@ module DeterministicTests =
         open Examples.RGraphs
 
         type RGraphs =
+
             // Reyes p88
             static member Omega_RGraphs =
                 let F =
@@ -184,207 +189,181 @@ module DeterministicTests =
                 Presheaf.isIso F (Truth.omega cat)
 
 module RandomTests =
-    // todo: pullback of monic is monic
-    // todo: pasting lemma
 
-    // Samples an element from the input sequence.
-    let sampleOne g =
-        g
+    /// Samples from a generator.
+    let sample g = g |> Gen.sample 0 1 |> Seq.exactlyOne
+
+    /// Generates element from a generated set.
+    let genElementFromInhabitedSet X =
+        X
+        |> Gen.filter (Set.isEmpty >> not)
+        |> sample
         |> Gen.elements
-        |> Gen.sample 0 1
-        |> Seq.exactlyOne
 
-    // Samples a pair from the input sequence.
-    let sampleTwo g =
-        g
-        |> Gen.elements
-        |> Gen.two
-        |> Gen.sample 0 1
-        |> Seq.exactlyOne
+    /// Samples from a generated set.
+    let sampleSet X =
+        X |> genElementFromInhabitedSet |> sample
 
-    // Generates an arbitrary representable.
-    let makeArbRep cat =
+    /// Generates a representable.
+    let genRepresentable cat =
         let yo = Yoneda.yo cat
         let reps = cat.Objects |> Set.map yo.Object
-        reps |> sampleOne
+        reps |> Gen.elements
 
-    // Tries to generate a random pushout of three representables.
-    let tryMakeArbPushout cat =
-        let F = makeArbRep cat
-        let G = makeArbRep cat
-        let H = makeArbRep cat
-        let ns = Morphism.hom H F
-        let ms = Morphism.hom H G
+    /// Generates a binary product of representables.
+    let genProduct cat =
+        cat
+        |> genRepresentable
+        |> Gen.two
+        |> Gen.unzip
+        ||> Gen.map2 Presheaf.product
 
-        if not (Set.isEmpty ns || Set.isEmpty ms) then
-            let n = ns |> sampleOne
-            let m = ms |> sampleOne
-            Presheaf.pushout n m |> Some
-        else
-            None
+    /// Generates a morphism from a presheaf to a generated presheaf.
+    let genHomFixedToGen G gH =
+        (Gen.constant G, gH)
+        ||> Gen.map2 Morphism.hom
+        |> Gen.filter (Set.isEmpty >> not)
+
+
+    // Generates a pushout of representables.
+    let genSimplePushout cat =
+        let (gG, gH, gI) =
+            cat |> genRepresentable |> Gen.three |> Gen.unzip3
+
+        let I = gI |> sample
+
+        let f =
+            (I, gG)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+
+        let g =
+            (I, gH)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+
+        (f, g) ||> Gen.map2 Presheaf.pushout
+
+    // Generates a pushout of products of representables.
+    let genComplexPushout cat =
+        let (gG, gH, gI) =
+            cat |> genProduct |> Gen.three |> Gen.unzip3
+
+        let I = gI |> sample
+
+        let f =
+            (I, gG)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+
+        let g =
+            (I, gH)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+
+        (f, g) ||> Gen.map2 Presheaf.pushout
+
+    /// Generates a morphism between pushouts of reprsentables.
+    let genHom cat =
+        cat
+        |> genSimplePushout
+        |> Gen.two
+        |> Gen.unzip
+        ||> Gen.map2 Morphism.hom
+        |> sampleSet
 
     let ``F + 0 ~= F`` cat =
-        let oG = tryMakeArbPushout cat
         let O = Presheaf.zero cat
-
-        match oG with
-        | Some G -> Presheaf.isIso (Presheaf.sum G O) G
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+        let F = genComplexPushout cat |> sample
+        Presheaf.isIso (Presheaf.sum F O) F
 
     let ``F * 0 ~= 0`` cat =
-        let oG = tryMakeArbPushout cat
         let O = Presheaf.zero cat
-
-        match oG with
-        | Some G -> Presheaf.isIso (Presheaf.product G O) O
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+        let F = genComplexPushout cat |> sample
+        Presheaf.isIso (Presheaf.product F O) O
 
     let ``F * 1 ~= 1`` cat =
-        let oG = tryMakeArbPushout cat
         let I = Presheaf.one cat
-
-        match oG with
-        | Some G -> Presheaf.isIso (Presheaf.product G I) G
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+        let F = genComplexPushout cat |> sample
+        Presheaf.isIso (Presheaf.product F I) F
 
     let ``F + G ~= G + F`` cat =
-        let oG = tryMakeArbPushout cat
-        let oH = tryMakeArbPushout cat
-
-        match (oG, oH) with
-        | (Some G, Some H) -> Presheaf.isIso (Presheaf.sum G H) (Presheaf.sum H G)
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+        let F = genSimplePushout cat |> sample
+        let G = genSimplePushout cat |> sample
+        Presheaf.isIso (Presheaf.sum F G) (Presheaf.sum G F)
 
     let ``F * G ~= G * F`` cat =
-        let oG = tryMakeArbPushout cat
-        let oH = tryMakeArbPushout cat
+        let F = genSimplePushout cat |> sample
+        let G = genSimplePushout cat |> sample
+        Presheaf.isIso (Presheaf.product F G) (Presheaf.product G F)
 
-        match (oG, oH) with
-        | (Some G, Some H) -> Presheaf.isIso (Presheaf.product G H) (Presheaf.product H G)
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+    let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only compare cardinalities.
+        let F = genSimplePushout cat |> sample
+        let G = genSimplePushout cat |> sample
+        let H = genSimplePushout cat |> sample
+        Set.count (Morphism.hom (Presheaf.product F G) H) = Set.count (Morphism.hom F (Presheaf.exp cat G H))
 
-    let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only test the set cardinalities.
-        let oG = tryMakeArbPushout cat
-        let oH = tryMakeArbPushout cat
-        let oJ = tryMakeArbPushout cat
+    let ``# sub F = # hom <F, Omega>`` cat = // Note we only compare cardinalities.
+        let F = genSimplePushout cat |> sample
+        let subF = Subobject.subobjects cat F
+        let Om = Truth.omega cat
+        Set.count (Morphism.hom F Om) = Set.count subF
 
-        match (oG, oH, oJ) with
-        | (Some G, Some H, Some J) ->
-            Set.count (Morphism.hom (Presheaf.product G H) J) = Set.count (Morphism.hom G (Presheaf.exp cat H J))
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+    let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
+        let F = genSimplePushout cat |> sample
+        let subalg = (Subobject.subalgebra cat F)
+        let (+) = Subobject.join
+        let (*) = Subobject.meet
+        let d = Subobject.boundary subalg
+        let eq (X, Y) = d (X * Y) = (d X * Y) + (X * d Y)
+        subalg.Subobjects |> Set.square |> Set.forall eq
 
-    let ``# sub F = # hom <F, Omega>`` cat = // Note we only test the cardinalities.
-        let oG = tryMakeArbPushout cat
-
-        match oG with
-        | Some G ->
-            let subF = Subobject.subobjects cat G
-            let omega = Truth.omega cat
-            Set.count (Morphism.hom G omega) = Set.count subF
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
-
-    let ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat =
-        let oG = tryMakeArbPushout cat
-
-        match oG with
-        | Some G ->
-            let subalg = (Subobject.subalgebra cat G)
-            let (X, Y) = subalg.Subobjects |> sampleTwo
-            let (+) = Subobject.join
-            let (*) = Subobject.meet
-            let d = Subobject.boundary subalg
-            d (X * Y) = (d X * Y) + (X * d Y)
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
-
-    let ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat =
-        let oG = tryMakeArbPushout cat
-
-        match oG with
-        | Some G ->
-            let subalg = (Subobject.subalgebra cat G)
-            let (X, Y) = subalg.Subobjects |> sampleTwo
-            let (+) = Subobject.join
-            let (*) = Subobject.meet
-            let d = Subobject.boundary subalg
-            d (X + Y) + d (X * Y) = d X + d Y
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+    let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
+        let F = genSimplePushout cat |> sample
+        let subalg = (Subobject.subalgebra cat F)
+        let (+) = Subobject.join
+        let (*) = Subobject.meet
+        let d = Subobject.boundary subalg
+        let eq (X, Y) = d (X + Y) + d (X * Y) = d X + d Y
+        subalg.Subobjects |> Set.square |> Set.forall eq
 
     let ``omega-axiom isomorphism`` cat =
-        let oG = tryMakeArbPushout cat
+        let F = genSimplePushout cat |> sample
+        let subalg = (Subobject.subalgebra cat F)
+        let phi = Truth.subobjectToChar cat subalg
+        let psi = Truth.charToSubobject cat
+        let Om = Truth.omega cat
 
-        match oG with
-        | Some G ->
-            let subalg = (Subobject.subalgebra cat G)
-            let phi = Truth.subobjectToChar cat subalg
-            let psi = Truth.charToSubobject cat
-            let O = Truth.omega cat
-
-            (subalg.Subobjects
-             |> Set.forall (fun S -> S |> phi |> psi = S))
-            && (Morphism.hom subalg.Top O
-                |> Set.forall (fun n -> n |> psi |> phi = n))
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
+        (subalg.Subobjects
+         |> Set.forall (fun S -> S |> phi |> psi = S))
+        && (Morphism.hom subalg.Top Om
+            |> Set.forall (fun n -> n |> psi |> phi = n))
 
     let ``exists-preimage-forall adjunction`` cat =
-        let oG = tryMakeArbPushout cat
-        let oH = tryMakeArbPushout cat
+        let f = genHom cat
+        let pi = Subobject.preimage cat f
+        let ex = Subobject.exists cat f
+        let fa = Subobject.forall cat f
+        let subalgF = Subobject.subalgebra cat f.Dom
+        let subalgG = Subobject.subalgebra cat f.Cod
+        let subG = subalgF.Subobjects
+        let subH = subalgG.Subobjects
 
-        match (oG, oH) with
-        | (Some G, Some H) ->
-            let hom = Morphism.hom G H
+        let adjunction1 (S, T) =
+            subalgG.LessEq.[ex.[S], T]
+            <=> subalgF.LessEq.[S, pi.[T]]
 
-            if Set.isEmpty hom then
-                printfn "(a test passed vacuously)"
-                true
-            else
-                let f = hom |> sampleOne
+        let adjunction2 (S, T) =
+            subalgG.LessEq.[T, fa.[S]]
+            <=> subalgF.LessEq.[pi.[T], S]
 
-                let pi = Subobject.preimage cat f
-                let ex = Subobject.exists cat f
-                let fa = Subobject.forall cat f
+        (subG, subH)
+        ||> Set.product
+        |> Set.forall (fun ST -> adjunction1 ST && adjunction2 ST)
 
-                let subalgG = Subobject.subalgebra cat G
-                let subalgH = Subobject.subalgebra cat H
-
-                let subG = subalgG.Subobjects
-                let subH = subalgH.Subobjects
-
-                let adjunction1 (S, T) =
-                    subalgH.LessEq.[ex.[S], T]
-                    <=> subalgG.LessEq.[S, pi.[T]]
-
-                let adjunction2 (S, T) =
-                    subalgH.LessEq.[T, fa.[S]]
-                    <=> subalgG.LessEq.[pi.[T], S]
-
-                (subG, subH)
-                ||> Set.product
-                |> Set.forall (fun ST -> adjunction1 ST && adjunction2 ST)
-
-        | _ ->
-            printfn "(a test passed vacuously)"
-            true
-
+    // todo: pullback of monic is monic
+    // todo: pasting lemma
+    
     module Sets =
         open Examples.Sets
 
@@ -399,8 +378,13 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(Sets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(Sets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(Sets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(Sets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(Sets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
             static member ``(Sets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Sets) exists-preimage-forall adjunction`` =
@@ -420,8 +404,12 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(Bisets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(Bisets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(Bisets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(Bisets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(Bisets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
             static member ``(Bisets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
@@ -442,8 +430,13 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(Bouquets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(Bouquets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(Bouquets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(Bouquets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(Bouquets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
             static member ``(Bouquets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Bouquets) exists-preimage-forall adjunction`` =
@@ -463,8 +456,13 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(Graphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(Graphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(Graphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(Graphs) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(Graphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
             static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Graphs) exists-preimage-forall adjunction`` =
@@ -484,8 +482,13 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(RGraphs) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(RGraphs) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(RGraphs) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(RGraphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
             static member ``(RGraphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(RGraphs) exists-preimage-forall adjunction`` =
@@ -505,8 +508,13 @@ module RandomTests =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
             static member ``(TruncESets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
-            static member ``(TruncESets) ∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` = ``∂(x ∧ y) = (∂x ∧ y) ∨ (x ∧ ∂y)`` cat
-            static member ``(TruncESets) ∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` = ``∂(x ∨ y) ∨ ∂(x ∧ y) = ∂x ∨ ∂y`` cat
+
+            static member ``(TruncESets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``(TruncESets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
             static member ``(TruncESets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(TruncESets) exists-preimage-forall adjunction`` =
@@ -525,5 +533,5 @@ let testRandom () =
     Check.All<RandomTests.Bisets.Bisets>(config)
     Check.All<RandomTests.Bouquets.Bouquets>(config)
     Check.All<RandomTests.Graphs.Graphs>(config)
-    Check.All<RandomTests.RGraphs.RGraphs>(config)
-    Check.All<RandomTests.TruncESets.TruncESets>(config)
+    Check.All<RandomTests.RGraphs.RGraphs>(config) // These examples are currently too complex to test.
+    Check.All<RandomTests.TruncESets.TruncESets>(config) //

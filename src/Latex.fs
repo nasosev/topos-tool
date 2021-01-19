@@ -20,13 +20,13 @@ let ofGeneric (o: _): string =
 
     str
     |> regexReplace "[A-Za-z]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
-    |> replace @"set []" @"\emptyset "
-    |> regexReplaceRec (regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // As above.
-    |> regexReplaceRec (regexReplace "set \[(.+)\]" "\\lbrace $1 \\rbrace ") // Recursively converts nonempty sets.
+    |> regexReplaceRec (regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // Converts coproducts.
+    |> replace @"set []" @"{\emptyset} "
+    |> replace @"set " @" "
+    |> replace @"[" @"\lbrace " // Lists and sets will both have braces.
+    |> replace @"]" @"\rbrace " //
     |> replace @"(" @"\langle "
     |> replace @")" @"\rangle "
-    |> replace @"[" @"\langle "
-    |> replace @"]" @"\rangle "
     |> replace @"⟨" "( "
     |> replace @"⟩" @") "
     |> replace @";" @", "

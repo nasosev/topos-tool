@@ -224,7 +224,6 @@ module RandomTests =
         ||> Gen.map2 Morphism.hom
         |> Gen.filter (Set.isEmpty >> not)
 
-
     // Generates a pushout of representables.
     let genSimplePushout cat =
         let (gG, gH, gI) =
@@ -263,10 +262,22 @@ module RandomTests =
 
         (f, g) ||> Gen.map2 Presheaf.pushout
 
+    // Generates a coequaliser of pushouts of representables..
+    let genCoequaliser cat =
+        cat
+        |> genSimplePushout
+        |> Gen.two
+        |> Gen.unzip
+        ||> Gen.map2 Morphism.hom
+        |> genElementFromInhabitedSet
+        |> Gen.two
+        |> Gen.unzip
+        ||> Gen.map2 Presheaf.coequaliser
+
     /// Generates a morphism between pushouts of reprsentables.
     let genHom cat =
         cat
-        |> genSimplePushout
+        |> genCoequaliser
         |> Gen.two
         |> Gen.unzip
         ||> Gen.map2 Morphism.hom
@@ -288,29 +299,29 @@ module RandomTests =
         Presheaf.isIso (Presheaf.product F I) F
 
     let ``F + G ~= G + F`` cat =
-        let F = genSimplePushout cat |> sample
-        let G = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
+        let G = genCoequaliser cat |> sample
         Presheaf.isIso (Presheaf.sum F G) (Presheaf.sum G F)
 
     let ``F * G ~= G * F`` cat =
-        let F = genSimplePushout cat |> sample
-        let G = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
+        let G = genCoequaliser cat |> sample
         Presheaf.isIso (Presheaf.product F G) (Presheaf.product G F)
 
     let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only compare cardinalities.
-        let F = genSimplePushout cat |> sample
-        let G = genSimplePushout cat |> sample
-        let H = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
+        let G = genCoequaliser cat |> sample
+        let H = genCoequaliser cat |> sample
         Set.count (Morphism.hom (Presheaf.product F G) H) = Set.count (Morphism.hom F (Presheaf.exp cat G H))
 
     let ``# sub F = # hom <F, Omega>`` cat = // Note we only compare cardinalities.
-        let F = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
         let subF = Subobject.subobjects cat F
         let Om = Truth.omega cat
         Set.count (Morphism.hom F Om) = Set.count subF
 
     let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
-        let F = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
         let subalg = (Subobject.subalgebra cat F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
@@ -319,7 +330,7 @@ module RandomTests =
         subalg.Subobjects |> Set.square |> Set.forall eq
 
     let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
-        let F = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
         let subalg = (Subobject.subalgebra cat F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
@@ -328,7 +339,7 @@ module RandomTests =
         subalg.Subobjects |> Set.square |> Set.forall eq
 
     let ``omega-axiom isomorphism`` cat =
-        let F = genSimplePushout cat |> sample
+        let F = genCoequaliser cat |> sample
         let subalg = (Subobject.subalgebra cat F)
         let phi = Truth.subobjectToChar cat subalg
         let psi = Truth.charToSubobject cat
@@ -363,7 +374,7 @@ module RandomTests =
 
     // todo: pullback of monic is monic
     // todo: pasting lemma
-    
+
     module Sets =
         open Examples.Sets
 

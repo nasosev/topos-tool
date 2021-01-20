@@ -15,15 +15,16 @@ let sub (_cat: Category<'A>)
 
     let ob (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> =
         let presheaves =
-            [ for A in Map.dom F.Ob do
+            [ for A in F.Category.Objects do
                 [ for X in Set.powerset F.Ob.[A] do
                     (A, X) ] ]
             |> List.listProduct
-            |> List.map map
-            |> List.map (fun ob ->
+            |> List.map (fun ls ->
+                let ob = Map ls
+
                 ob,
-                map [ for a in Map.dom F.Ar do
-                          (a, Map.restrict F.Ar.[a] ob.[a.Cod]) ])
+                Map [ for a in F.Category.Arrows do
+                          (a, Map.restrict ob.[a.Cod] F.Ar.[a]) ])
             |> List.filter (fun (ob, ar) -> Presheaf.isPresheaf F.Category ob ar)
             |> List.mapi (fun i (ob, ar) ->
                 let name = nameSubpresheaf i F ob ar
@@ -40,7 +41,7 @@ let sub (_cat: Category<'A>)
         presheaves
 
     let ar (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
-        map [ for S in ob f.Cod do
+        Map [ for S in ob f.Cod do
                   let inclusion = Morphism.inc S f.Cod
                   let pb = Presheaf.pullback f inclusion
                   let proj = (Morphism.proj1 pb).Cod
@@ -52,11 +53,10 @@ let sub (_cat: Category<'A>)
 let isSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
     Morphism.hom F G |> Set.exists Morphism.isMono
 
-/// Determines if F is a strict subpresheaf of G.
-let isStrictSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
-    F.Ar
-    |> Map.dom // Note this cannot be `nonidArrows`.
-    |> Set.forall (fun a -> Map.isSubmap F.Ar.[a] G.Ar.[a])
+/// Determines if U is a strict subobject of V.
+let lessEq (U: Presheaf<'A, 'S>) (V: Presheaf<'A, 'S>): bool =
+    U.Category.Arrows // Note this cannot be `nonidArrows`.
+    |> Set.forall (fun a -> Map.isSubmap U.Ar.[a] V.Ar.[a])
 
 /// Gives the subobjects of a presheaf.
 let subobjects (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> = F |> (sub F.Category).Object
@@ -76,7 +76,7 @@ let algebra (F: Presheaf<'A, 'S>): Algebra<'A, 'S> =
 
     let lessEq =
         [ for (G, H) in Set.square subobjects do
-            ((G, H), isStrictSubobject G H) ]
+            ((G, H), lessEq G H) ]
         |> Relation.ofList
 
     { Top = top
@@ -85,52 +85,52 @@ let algebra (F: Presheaf<'A, 'S>): Algebra<'A, 'S> =
       LessEq = lessEq }
 
 /// Join of subobjects in a heyting algebra of subobjects.
-let join (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let name = Name.join F.Name G.Name
+let join (U: Presheaf<'A, 'S>) (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.join U.Name V.Name
 
     let ob =
-        map [ for A in Map.dom F.Ob do
-                  let X = Set.union F.Ob.[A] G.Ob.[A]
+        Map [ for A in U.Category.Objects do
+                  let X = Set.union U.Ob.[A] V.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom F.Ar do
-                  let x = Map.union F.Ar.[a] G.Ar.[a]
+        Map [ for a in U.Category.Arrows do
+                  let x = Map.union U.Ar.[a] V.Ar.[a]
 
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Category = U.Category }
 
 /// Join set of subobjects in a heyting algebra of subobjects.
-let joinMany (alg: Algebra<'A, 'S>) (Fs: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Fs |> Set.fold join alg.Bot
+let joinMany (alg: Algebra<'A, 'S>) (Us: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Us |> Set.fold join alg.Bot
 
 /// Meet of subobjects in a heyting algebra of subobjects.
-let meet (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let name = Name.meet F.Name G.Name
+let meet (U: Presheaf<'A, 'S>) (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.meet U.Name V.Name
 
     let ob =
-        map [ for A in Map.dom F.Ob do
-                  let X = Set.intersect F.Ob.[A] G.Ob.[A]
+        Map [ for A in U.Category.Objects do
+                  let X = Set.intersect U.Ob.[A] V.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom F.Ar do
-                  let x = Map.intersect F.Ar.[a] G.Ar.[a]
+        Map [ for a in U.Category.Arrows do
+                  let x = Map.intersect U.Ar.[a] V.Ar.[a]
 
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Category = U.Category }
 
 /// Meet set of subobjects in a heyting algebra of subobjects.
-let meetMany (alg: Algebra<'A, 'S>) (Fs: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Fs |> Set.fold meet alg.Top
+let meetMany (alg: Algebra<'A, 'S>) (Us: Set<Presheaf<'A, 'S>>): Presheaf<'A, 'S> = Us |> Set.fold meet alg.Top
 
 /// Implication in a heyting algebra of subobjects.
 let imply (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
@@ -143,42 +143,42 @@ let imply (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Pr
     H |> Presheaf.rename name
 
 /// Subtraction in a coheyting algebra of subobjects.
-let minus (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+let minus (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>) (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let H =
         alg.Subobjects
-        |> Set.filter (fun H -> alg.LessEq.[F, join G H])
+        |> Set.filter (fun H -> alg.LessEq.[U, join V H])
         |> meetMany alg
 
-    let name = Name.minus F.Name G.Name
+    let name = Name.minus U.Name V.Name
     H |> Presheaf.rename name
 
 /// Negation in a heyting algebra of subobjects.
-let negate (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let H = imply alg F alg.Bot
-    let name = Name.negate F.Name
+let negate (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let H = imply alg U alg.Bot
+    let name = Name.negate U.Name
     H |> Presheaf.rename name
 
 /// Supplement in a coheyting algebra of subobjects.
-let supplement (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let H = minus alg alg.Top F
-    let name = Name.supplement F.Name
+let supplement (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let H = minus alg alg.Top U
+    let name = Name.supplement U.Name
     H |> Presheaf.rename name
 
 /// Coboundary in a heyting algebra of subobjects.
-let coboundary (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let name = Name.coboundary F.Name
-    join F (negate alg F) |> Presheaf.rename name
+let coboundary (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.coboundary U.Name
+    join U (negate alg U) |> Presheaf.rename name
 
 /// Boundary in a coheyting algebra of subobjects.
-let boundary (alg: Algebra<'A, 'S>) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let name = Name.boundary F.Name
-    meet (supplement alg F) F |> Presheaf.rename name
+let boundary (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.boundary U.Name
+    meet (supplement alg U) U |> Presheaf.rename name
 
 /// Preimage.
 let preimage (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
     let cod = algebra f.Cod
 
-    map [ for T in cod.Subobjects do
+    Map [ for T in cod.Subobjects do
               let pre_f =
                   let inc = Morphism.inc T cod.Top
 
@@ -191,7 +191,7 @@ let preimage (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> 
 let exists (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
     let dom = subobjects f.Dom
 
-    map [ for S in dom do
+    Map [ for S in dom do
               let ex_f =
                   Morphism.apply f S
                   |> Presheaf.rename (Name.exists f.Name S.Name)
@@ -202,7 +202,7 @@ let exists (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
 let forall (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
     let dom = subobjects f.Dom
 
-    map [ for S in dom do
+    Map [ for S in dom do
               let fa_f =
                   let name = Name.forall f.Name S.Name
 
@@ -217,13 +217,13 @@ let forall (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
                                       f.Mapping.[B].[s] = f.Cod.Ar.[a].[t]
                                       => Set.contains s S.Ob.[B])))
 
-                      map [ for A in f.Category.Objects do
+                      Map [ for A in f.Category.Objects do
                                 let X = f.Cod.Ob.[A] |> Set.filter (filter A)
                                 (A, X) ]
 
                   let ar =
-                      map [ for a in f.Category.Arrows do
-                                let x = Map.restrict f.Cod.Ar.[a] ob.[a.Cod]
+                      Map [ for a in f.Category.Arrows do
+                                let x = Map.restrict ob.[a.Cod] f.Cod.Ar.[a]
                                 (a, x) ]
 
                   { Name = name

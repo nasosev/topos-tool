@@ -54,7 +54,7 @@ let coequaliser (name: Name) (name': Name): Name =
     { String = $"Coeq [{name.String}, {name'.String}]" }
 
 let apply (name: Name) (name': Name): Name =
-    { String = $"{name.String} {name'.String}" }
+    { String = $"{name.String} ⟨{name'.String}⟩" }
 
 let compose (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} @ {name'.String}⟩" }

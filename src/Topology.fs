@@ -24,13 +24,13 @@ let topologies (cat: Category<'A>): Set<Morphism<'A, Heart<'A>, Heart<'A>>> =
     hom |> Set.filter isTopology
 
 /// Gives the closure of a subobject relative to a topology.
-let closure (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (S: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
-    let chiS = S |> Truth.subobjectToChar alg.Top
+let closure (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let chiS = U |> Truth.subobjectToChar alg.Top
 
     (j, chiS)
     ||> Morphism.compose
     |> Truth.charToSubobject
 
 /// Checks if a subobject is dense relative to a topology.
-let isDense (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (S: Presheaf<'A, 'S>): bool =
-    S = closure alg j S
+let isDense (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (U: Presheaf<'A, 'S>): bool =
+    U = closure alg j U

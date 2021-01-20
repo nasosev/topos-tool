@@ -55,10 +55,10 @@ module DeterministicTests =
 
                 let J =
                     let ob =
-                        map [ (V, set [ 1 ])
+                        Map [ (V, set [ 1 ])
                               (L, set [ 1; 2 ]) ]
 
-                    let ar = map [ (v, map [ (1, 1); (2, 1) ]) ]
+                    let ar = Map [ (v, Map [ (1, 1); (2, 1) ]) ]
                     Presheaf.make "J" cat ob ar
 
                 J == K
@@ -77,11 +77,11 @@ module DeterministicTests =
             // Reyes p51
             static member ``gluing a loop to the tip of an arrow by pushout`` =
                 let G =
-                    let ob = map [ (V, set [ () ]); (E, set [ () ]) ]
+                    let ob = Map [ (V, set [ () ]); (E, set [ () ]) ]
 
                     let ar =
-                        map [ (s, map [ ((), ()) ])
-                              (t, map [ ((), ()) ]) ]
+                        Map [ (s, Map [ ((), ()) ])
+                              (t, Map [ ((), ()) ]) ]
 
                     Presheaf.make "G" cat ob ar
 
@@ -89,7 +89,7 @@ module DeterministicTests =
 
                 let f =
                     let mapping =
-                        (map [ V, map [ cat.Id.[V], t ]
+                        (Map [ V, Map [ cat.Id.[V], t ]
                                E, Map.empty ])
 
                     Morphism.make "f" hV hE mapping
@@ -98,12 +98,12 @@ module DeterministicTests =
 
                 let J =
                     let ob =
-                        map [ (V, set [ 1; 2 ])
+                        Map [ (V, set [ 1; 2 ])
                               (E, set [ 1; 2 ]) ]
 
                     let ar =
-                        map [ (s, map [ (1, 2); (2, 1) ])
-                              (t, map [ (1, 2); (2, 2) ]) ]
+                        Map [ (s, Map [ (1, 2); (2, 1) ])
+                              (t, Map [ (1, 2); (2, 2) ]) ]
 
                     Presheaf.make "J" cat ob ar
 
@@ -113,7 +113,7 @@ module DeterministicTests =
             static member Omega_Graphs =
                 let F =
                     let ob =
-                        map [ V, set [ "L_V"; "T_V" ]
+                        Map [ V, set [ "L_V"; "T_V" ]
                               E,
                               set [ "L_A"
                                     "T_/s"
@@ -122,14 +122,14 @@ module DeterministicTests =
                                     "T_A" ] ]
 
                     let nontrivAr =
-                        map [ s,
-                              map [ "L_A", "L_V"
+                        Map [ s,
+                              Map [ "L_A", "L_V"
                                     "T_/s", "T_V"
                                     "T_/t", "L_V"
                                     "t_A", "T_V"
                                     "T_A", "T_V" ]
                               t,
-                              map [ "L_A", "L_V"
+                              Map [ "L_A", "L_V"
                                     "T_/s", "L_V"
                                     "T_/t", "T_V"
                                     "t_A", "T_V"
@@ -148,7 +148,7 @@ module DeterministicTests =
             static member Omega_RGraphs =
                 let F =
                     let ob =
-                        map [ V, set [ "L_V"; "T_V" ]
+                        Map [ V, set [ "L_V"; "T_V" ]
                               E,
                               set [ "L_A"
                                     "T_/s"
@@ -157,27 +157,27 @@ module DeterministicTests =
                                     "T_A" ] ]
 
                     let nontrivAr =
-                        map [ l, map [ "L_V", "L_A"; "T_V", "T_A" ]
+                        Map [ l, Map [ "L_V", "L_A"; "T_V", "T_A" ]
                               s,
-                              map [ "L_A", "L_V"
+                              Map [ "L_A", "L_V"
                                     "T_/s", "T_V"
                                     "T_/t", "L_V"
                                     "t_A", "T_V"
                                     "T_A", "T_V" ]
                               t,
-                              map [ "L_A", "L_V"
+                              Map [ "L_A", "L_V"
                                     "T_/s", "L_V"
                                     "T_/t", "T_V"
                                     "t_A", "T_V"
                                     "T_A", "T_V" ]
                               u,
-                              map [ "L_A", "L_A"
+                              Map [ "L_A", "L_A"
                                     "T_/s", "T_A"
                                     "T_/t", "L_A"
                                     "t_A", "T_A"
                                     "T_A", "T_A" ]
                               v,
-                              map [ "L_A", "L_A"
+                              Map [ "L_A", "L_A"
                                     "T_/s", "L_A"
                                     "T_/t", "T_A"
                                     "t_A", "T_A"
@@ -215,7 +215,7 @@ module RandomTests =
         |> genRepresentable
         |> Gen.two
         |> Gen.unzip
-        ||> Gen.map2 Presheaf.product
+        ||> Gen.map2 (*)
 
     /// Generates a morphism from a presheaf to a generated presheaf.
     let genHomFixedToGen G gH =
@@ -568,5 +568,5 @@ let testRandom () =
     Check.All<RandomTests.Bisets.Bisets>(config)
     Check.All<RandomTests.Bouquets.Bouquets>(config)
     Check.All<RandomTests.Graphs.Graphs>(config)
-    Check.All<RandomTests.RGraphs.RGraphs>(config) // These examples are currently too complex to test.
-    Check.All<RandomTests.TruncESets.TruncESets>(config) //
+//Check.All<RandomTests.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
+//Check.All<RandomTests.TruncESets.TruncESets>(config) //

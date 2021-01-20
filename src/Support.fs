@@ -9,16 +9,11 @@ type Relation<'A, 'B when 'A: comparison and 'B: comparison> =
         let (Relation m) = __
         m.[a, b]
 
-/// Miscellaneous helper functions.
-[<AutoOpen>]
-module Helpers =
-    /// Builds a map from a sequence of objects.
-    let map elements = Collections.Map.ofSeq elements
-
 /// Boolean logical operators
 [<AutoOpen>]
 module BooleanLogic =
-    /// Classical implication.
+
+    /// Implication.
     let (=>) (p: bool) (q: bool): bool = (not p) || q
 
     /// Equivalence.
@@ -99,7 +94,7 @@ module Relation =
     let toList (Relation m: Relation<'A, 'B>): List<('A * 'B) * bool> = Map.toList m
 
     /// Converts a `List` type to a relation.
-    let ofList (xs: List<('A * 'B) * bool>): Relation<'A, 'B> = xs |> Map.ofList |> Relation
+    let ofList (xs: List<('A * 'B) * bool>): Relation<'A, 'B> = xs |> Map |> Relation
 
     /// Gives the set of related pairs of a relation.
     let ofPairs (dom: Set<'A>) (cod: Set<'B>) (ps: Set<'A * 'B>): Relation<'A, 'B> =
@@ -112,8 +107,7 @@ module Relation =
     let toPairs (Relation m: Relation<'A, 'B>): Set<'A * 'B> =
         m
         |> Map.filter (fun _ -> id)
-        |> Map.toList // Todo: could use Map.dom if top module were recursive.
-        |> List.map fst
+        |> Seq.map (fun (KeyValue (k, _)) -> k) // Todo: could use Map.dom if top module were recursive.
         |> set
 
     /// Maps over a relation.
@@ -146,7 +140,10 @@ module Relation =
     /// Gives the product domain of the relation.
     let relDom (rel: Relation<'A, 'B>): Set<'A * 'B> =
         let (Relation table) = rel
-        table |> Map.toList |> List.map fst |> set // Todo: could use Map.dom if top module were recursive.
+
+        table
+        |> Seq.map (fun (KeyValue (k, _)) -> k)
+        |> set // Todo: could use Map.dom if top module were recursive.
 
     /// Gives the transitive closure of a relation.
     let transitiveClosure (rel: Relation<'A, 'A>): Relation<'A, 'A> =
@@ -260,23 +257,24 @@ module Map =
     let toSet (x: Map<'A, 'B>): Set<'A * 'B> = x |> Map.toList |> set
 
     /// Gives the identity map on a set.
-    let id (X: Set<'A>): Map<'A, 'A> = X |> Set.map (fun s -> (s, s)) |> map
+    let id (X: Set<'A>): Map<'A, 'A> = X |> Set.map (fun s -> (s, s)) |> Map
 
     /// Composes maps.
     let compose (x: Map<'B, 'C>) (y: Map<'A, 'B>): Map<'A, 'C> = y |> Map.map (fun _ t -> x.[t])
 
     /// Gives the domain of a map.
-    let dom (x: Map<'A, 'B>): Set<'A> = x |> Map.toList |> List.map fst |> set
+    let dom (x: Map<'A, 'B>): Set<'A> =
+        x |> Seq.map (fun (KeyValue (k, _)) -> k) |> set
 
     /// Gives the image of a map.
-    let image (x: Map<'A, 'B>): Set<'B> = x |> Map.toList |> List.map snd |> set
+    let image (x: Map<'A, 'B>): Set<'B> =
+        x |> Seq.map (fun (KeyValue (_, v)) -> v) |> set
 
     /// Checks if a map is injective.
     let isInjective (x: Map<'A, 'B>): bool =
         x
-        |> Map.toList
-        |> List.groupBy snd
-        |> List.forall (snd >> List.length >> ((>) 2))
+        |> Seq.groupBy (fun (KeyValue (_, v)) -> v)
+        |> Seq.forall (snd >> Seq.length >> ((>) 2))
 
     /// Checks if a map is surjective.
     let isSurjective (cod: Set<'B>) (x: Map<'A, 'B>): bool = image x = cod
@@ -289,7 +287,7 @@ module Map =
         let X = dom x
         let Y = dom y
 
-        map [ for z, w in Set.product X Y do
+        Map [ for z, w in Set.product X Y do
                   (z, w), (x.[z], y.[w]) ]
 
     /// Binary sum of maps.
@@ -297,7 +295,7 @@ module Map =
         let X = dom x
         let Y = dom y
 
-        map [ for z in Set.sum X Y do
+        Map [ for z in Set.sum X Y do
                   match z with
                   | Choice1Of2 u -> (Choice1Of2 u, Choice1Of2 x.[u])
                   | Choice2Of2 v -> (Choice2Of2 v, Choice2Of2 y.[v]) ]
@@ -307,12 +305,12 @@ module Map =
         if dom x <> dom y
         then failwith "Cannot tuple maps with different domains."
 
-        map [ for a in dom x do
+        Map [ for a in dom x do
                   (a, (x.[a], y.[a])) ]
 
     /// Binary tuple of maps.
     let cotuple (x: Map<'B, 'A>) (y: Map<'C, 'A>): Map<Choice<'B, 'C>, 'A> =
-        map [ for bc in Set.sum (dom x) (dom y) do
+        Map [ for bc in Set.sum (dom x) (dom y) do
                   let im =
                       match bc with
                       | Choice1Of2 b -> x.[b]
@@ -365,15 +363,15 @@ module Map =
         XY |> Set.partitionByEquivalence equal
 
     /// Restricts a map to a subdomain.
-    let restrict (x: Map<'A, 'B>) (X: Set<'A>): Map<'A, 'B> =
+    let restrict (X: Set<'A>) (x: Map<'A, 'B>): Map<'A, 'B> =
         Map.filter (fun z _ -> Set.contains z X) x
 
     /// Gives the union of the maps on a common domain. Note that the result may fail to be a function.
-    let union (x: Map<'A, 'B>) (y: Map<'A, 'B>): Map<'A, 'B> = (toSet x, toSet y) ||> Set.union |> map
+    let union (x: Map<'A, 'B>) (y: Map<'A, 'B>): Map<'A, 'B> = (toSet x, toSet y) ||> Set.union |> Map
 
     /// Gives the intersection of the maps on a common domain.
     let intersect (x: Map<'A, 'B>) (y: Map<'A, 'B>): Map<'A, 'B> =
-        (toSet x, toSet y) ||> Set.intersect |> map
+        (toSet x, toSet y) ||> Set.intersect |> Map
 
     /// Checks if a map is submap of another.
     let isSubmap (x: Map<'A, 'B>) (y: Map<'A, 'B>): bool = (toSet x, toSet y) ||> Set.isSubset
@@ -381,9 +379,8 @@ module Map =
     /// Maps functions over the keys and values of a map.
     let doubleMap (f: 'A -> 'C) (g: 'B -> 'D) (x: Map<'A, 'B>): Map<'C, 'D> =
         x
-        |> Map.toList
-        |> List.map (fun (k, v) -> (f k, g v))
-        |> Map.ofList
+        |> Seq.map (fun (KeyValue (k, v)) -> (f k, g v))
+        |> Map
 
     /// Exponential of sets, i.e. set of functions X -> Y.
     let exp (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
@@ -396,7 +393,7 @@ module Map =
             ys
             |> List.replicate (Set.count X)
             |> List.listProduct
-            |> List.map (List.zip xs >> map)
+            |> List.map (List.zip xs >> Map)
             |> set
 
     /// Set of bijections X -> Y.

@@ -11,7 +11,7 @@ let make (nameStr: string)
     let name = Name.ofString nameStr
 
     let id =
-        map [ for A in objects do
+        Map [ for A in objects do
                   (A, Arrow.id A) ]
 
     let compose =
@@ -32,8 +32,10 @@ let make (nameStr: string)
 
             nonidArrows
             |> Set.square
-            |> Set.filter (fun (a, b) -> b.Cod = a.Dom && a.Cod = b.Dom)
-            |> Set.filter (fun ab -> Set.contains ab suppliedComps |> not)
+            |> Set.filter (fun (a, b) ->
+                b.Cod = a.Dom
+                && a.Cod = b.Dom
+                && not (Set.contains (a, b) suppliedComps))
             |> Set.map (fun (a, b) -> ((a, b), id.[b.Dom]))
 
         [ Map.toSet nontrivCompose
@@ -42,7 +44,7 @@ let make (nameStr: string)
           codIds
           unspecifiedIds ]
         |> Set.unionMany
-        |> map
+        |> Map
 
     let hom =
         let homDom (compose: Map<Arrow<'A> * Arrow<'A>, Arrow<'A>>) (A: 'A): Set<Arrow<'A>> =
@@ -58,7 +60,7 @@ let make (nameStr: string)
         let homset (compose: Map<Arrow<'A> * Arrow<'A>, Arrow<'A>>) (A: 'A, B: 'A): Set<Arrow<'A>> =
             Set.intersect (homDom compose A) (homCod compose B)
 
-        map [ for A in objects do
+        Map [ for A in objects do
                   for B in objects do
                       let homAB = homset compose (A, B)
                       (A, B), homAB ]
@@ -116,7 +118,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         ||> Set.product
         |> Set.map (fun (((a, a'), a''), ((b, b'), b'')) ->
             ((productAr (a, b), productAr (a', b')), productAr (a'', b'')))
-        |> map
+        |> Map
         |> filterNonid // todo: it would be more efficient to filter first.
 
     make name.String objects nonidArrows compose
@@ -165,7 +167,7 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
 
         (liftComposeC, liftComposeD)
         ||> Set.union
-        |> map
+        |> Map
         |> filterNonid
 
     make name.String objects nonidArrows compose
@@ -197,7 +199,7 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
               Dom = fst a.Dom
               Cod = fst a.Cod }
 
-        map [ for a in nonidArrows do
+        Map [ for a in nonidArrows do
                   for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
                       let ba =
                           let dom, cod = (snd b.Dom, snd a.Cod)
@@ -222,7 +224,7 @@ let ofPoset (nameStr: string) (lessEq: Relation<'A, 'A>): Category<'A> =
         |> Set.map singletonArrow
 
     let nontrivCompose =
-        map [ for a in nonidArrows do
+        Map [ for a in nonidArrows do
                   for b in nonidArrows |> Set.filter (fun b -> b.Cod = a.Dom) do
                       let ba = singletonArrow (b.Dom, a.Cod)
                       ((a, b), ba) ]

@@ -4,9 +4,8 @@ module Morphism
 
 /// Determines if the map of presheaves is a morphism.
 let isMorphism (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (mapping: Map<'A, Map<'S, 'T>>): bool =
-    Map.dom mapping = Map.dom dom.Ob // Check the mapping is defined on all objects.
-    && dom.Ar // Then check naturality.
-       |> Map.dom
+    Map.dom mapping = dom.Category.Objects // Check the mapping is defined on all objects.
+    && dom.Category.NonidArrows
        |> Set.forall (fun a ->
            dom.Ob.[a.Cod]
            |> Set.forall (fun x -> mapping.[a.Dom].[dom.Ar.[a].[x]] = cod.Ar.[a].[mapping.[a.Cod].[x]]))
@@ -44,16 +43,16 @@ let isIso (f: Morphism<'A, 'S, 'T>): bool = isEpi f && isMono f
 
 /// External hom of presheaves.
 let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
-    [ for A in Map.dom dom.Ob do
+    [ for A in dom.Category.Objects do
         [ for x in Map.exp dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.filter (map >> isMorphism dom cod)
+    |> List.filter (Map >> isMorphism dom cod)
     |> List.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
 
-        let mapping = map ls
+        let mapping = Map ls
 
         { Name = name
           Mapping = mapping
@@ -64,16 +63,16 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
 
 /// Gives the set of isomorphisms between two presheaves.
 let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
-    [ for A in Map.dom dom.Ob do
+    [ for A in dom.Category.Objects do
         [ for x in Map.iso dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.filter (map >> isMorphism dom cod)
+    |> List.filter (Map >> isMorphism dom cod)
     |> List.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
 
-        let mapping = map ls
+        let mapping = Map ls
 
         { Name = name
           Mapping = mapping
@@ -84,19 +83,19 @@ let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
 
 /// Applies a morphism to a presheaf.
 let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
-    let name = Name.compose f.Name dom.Name
+    let name = Name.apply f.Name dom.Name
 
     let ob =
-        map [ for A in Map.dom dom.Ob do
+        Map [ for A in f.Category.Objects do
                   let X =
                       Set.map (fun x -> f.Mapping.[A].[x]) dom.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom dom.Ar do
+        Map [ for a in f.Category.Arrows do
                   let x =
-                      map [ for x in dom.Ob.[a.Cod] do
+                      Map [ for x in dom.Ob.[a.Cod] do
                                 (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[dom.Ar.[a].[x]]) ]
 
                   (a, x) ]
@@ -114,7 +113,7 @@ let compose (g: Morphism<'A, 'T, 'U>) (f: Morphism<'A, 'S, 'T>): Morphism<'A, 'S
     let name = Name.compose g.Name f.Name
 
     let mapping =
-        map [ for A in Map.dom g.Mapping do
+        Map [ for A in g.Category.Objects do
                   let x = Map.compose g.Mapping.[A] f.Mapping.[A]
                   (A, x) ]
 
@@ -127,9 +126,9 @@ let compose (g: Morphism<'A, 'T, 'U>) (f: Morphism<'A, 'S, 'T>): Morphism<'A, 'S
 /// Lifts a function to a morphism.
 let lift (name: Name) (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (f: 'S -> 'T): Morphism<'A, 'S, 'T> =
     let mapping =
-        map [ for A in Map.dom dom.Ob do
+        Map [ for A in dom.Category.Objects do
                   let x =
-                      map [ for y in dom.Ob.[A] do
+                      Map [ for y in dom.Ob.[A] do
                                 (y, f y) ]
 
                   (A, x) ]
@@ -197,12 +196,12 @@ let internal presheafProduct (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Preshe
     let name = Name.product F.Name G.Name
 
     let ob =
-        map [ for A in Map.dom F.Ob do
+        Map [ for A in F.Category.Objects do
                   let X = Set.product F.Ob.[A] G.Ob.[A]
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom F.Ar do
+        Map [ for a in F.Category.Arrows do
                   let x = Map.product F.Ar.[a] G.Ar.[a]
                   (a, x) ]
 
@@ -216,12 +215,12 @@ let internal presheafSum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'
     let name = Name.sum F.Name G.Name
 
     let ob =
-        map [ for A in Map.dom F.Ob do
+        Map [ for A in F.Category.Objects do
                   let X = Set.sum F.Ob.[A] G.Ob.[A]
                   (A, X) ]
 
     let ar =
-        map [ for a in Map.dom F.Ar do
+        Map [ for a in F.Category.Arrows do
                   let x = Map.sum F.Ar.[a] G.Ar.[a]
                   (a, x) ]
 
@@ -235,7 +234,7 @@ let product (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, ('
     let name = Name.product f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom f.Mapping do
+        Map [ for A in f.Category.Objects do
                   let x = Map.product f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 
@@ -253,7 +252,7 @@ let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice
     let name = Name.sum f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom f.Mapping do
+        Map [ for A in f.Category.Objects do
                   let x = Map.sum f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 
@@ -274,7 +273,7 @@ let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, 
     let name = Name.tuple f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom f.Mapping do
+        Map [ for A in f.Category.Objects do
                   let x = Map.tuple f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 
@@ -295,7 +294,7 @@ let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Ch
     let name = Name.cotuple f.Name g.Name
 
     let mapping =
-        map [ for A in Map.dom f.Mapping do
+        Map [ for A in f.Category.Objects do
                   let x = Map.cotuple f.Mapping.[A] g.Mapping.[A]
                   (A, x) ]
 

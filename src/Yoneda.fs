@@ -9,14 +9,14 @@ let yo (cat: Category<'A>)
         let name = Name.yoneda (Name.ofString $"{A}")
 
         let ob =
-            map [ for B in cat.Objects do
+            Map [ for B in cat.Objects do
                       let X = cat.Hom.[B, A]
                       (B, X) ]
 
         let ar =
-            map [ for a in cat.Arrows do
+            Map [ for a in cat.Arrows do
                       let x =
-                          map [ for b in cat.Hom.[a.Cod, A] do
+                          Map [ for b in cat.Hom.[a.Cod, A] do
                                     (b, cat.Compose.[b, a]) ]
 
                       (a, x) ]
@@ -30,9 +30,9 @@ let yo (cat: Category<'A>)
         let name = Name.yoneda a.Name
 
         let mapping =
-            map [ for A in cat.Objects do
+            Map [ for A in cat.Objects do
                       let x =
-                          map [ for b in cat.Hom.[A, a.Dom] do
+                          Map [ for b in cat.Hom.[A, a.Dom] do
                                     (b, cat.Compose.[a, b]) ]
 
                       (A, x) ]

@@ -12,11 +12,11 @@
         <Compile Include="src\Morphism.fs" />
         <Compile Include="src\Yoneda.fs" />
         <Compile Include="src\Presheaf.fs" />
+        <Compile Include="src\Syntax.fs" />
         <Compile Include="src\Subobject.fs" />
         <Compile Include="src\Truth.fs" />
         <Compile Include="src\Topology.fs" />
         <Compile Include="src\Examples.fs" />
-        <Compile Include="src\Syntax.fs" />
         <Compile Include="src\Test.fs" />
         <Compile Include="src\Latex.fs" />
     </ItemGroup>

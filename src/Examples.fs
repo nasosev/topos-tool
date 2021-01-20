@@ -67,7 +67,7 @@ module RGraphs =
     let arrows = set [ s; t; l; u; v ]
 
     let compose =
-        map [ (s, l), u
+        Map [ (s, l), u
               (t, l), v
               (u, u), u
               (v, v), v
@@ -97,7 +97,7 @@ module TruncESets =
     let arrows = set [ s; s2; s3; s4 ]
 
     let compose =
-        map [ (s, s), s2
+        Map [ (s, s), s2
               (s, s2), s3
               (s2, s), s3
               (s2, s2), s4

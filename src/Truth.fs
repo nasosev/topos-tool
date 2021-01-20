@@ -8,22 +8,26 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
     let ob =
         let sub = Subobject.sub cat
 
-        map [ for A in cat.Objects do
+        Map [ for A in cat.Objects do
                   let hA = yo.Object A
                   let X = sub.Object hA
                   (A, X) ]
 
     let ar =
-        map [ for a in cat.Arrows do
+        Map [ for a in cat.Arrows do
                   let x =
-                      map [ for F in ob.[a.Cod] do
+                      Map [ for F in ob.[a.Cod] do
                                 let h = Morphism.id F
                                 let g = yo.Arrow a
                                 let pb = Presheaf.pullback h g
-                                let proj = (Morphism.proj2 pb).Cod
-                                (F, proj) ]
 
-                  (a, x) ]
+                                let proj =
+                                    (Morphism.proj2 pb).Cod
+                                    |> Presheaf.simplify ob.[a.Dom] // Rename the elements.
+
+                                (F, proj) ] // Rename the elements.
+
+                  (a, x) ] // Rename the elements.
 
     { Name = Name.omega
       Ob = ob
@@ -37,9 +41,9 @@ let truth (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let mapping =
         let yo = Yoneda.yo cat
 
-        map [ for A in cat.Objects do
+        Map [ for A in cat.Objects do
                   let hA = yo.Object A
-                  let x = map [ ((), hA) ]
+                  let x = Map [ ((), hA) ]
 
                   (A, x) ]
 
@@ -59,11 +63,12 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let mapping =
         let yo = Yoneda.yo cat
 
-        map [ for A in cat.Objects do
+        Map [ for A in cat.Objects do
                   let hA_bot =
-                      (yo.Object A |> Subobject.algebra).Bot
+                      let subalg = yo.Object A |> Subobject.algebra
+                      subalg.Bot
 
-                  let x = map [ ((), hA_bot) ]
+                  let x = Map [ ((), hA_bot) ]
 
                   (A, x) ]
 
@@ -80,33 +85,34 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
 let charToSubobject (c: Morphism<'A, 'S, Heart<'A>>): Presheaf<'A, 'S> =
     let t = truth c.Category
     let pb = Presheaf.pullback c t
-    (Morphism.proj1 pb).Cod
+    let proj = Morphism.proj1 pb
+    proj.Cod
 
-/// Subobject to characteristic morphism.
-let subobjectToChar (top: Presheaf<'A, 'S>) (S: Presheaf<'A, 'S>): Morphism<'A, 'S, Heart<'A>> =
-    let name = Name.char S.Name
-    let cod = omega S.Category
+/// Subobject to characteristic morphism. (p92 Reyes.)
+let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 'S, Heart<'A>> =
+    let name = Name.char U.Name
+    let Om = omega U.Category
 
     let mapping =
-        map [ for A in S.Category.Objects do
+        Map [ for A in U.Category.Objects do
                   let x =
-                      map [ for s in top.Ob.[A] do
+                      Map [ for s in top.Ob.[A] do
                                 let cs =
                                     let filter (a: Arrow<'A>): bool =
-                                        S.Ob.[a.Dom] |> Set.contains top.Ar.[a].[s]
+                                        U.Ob.[a.Dom] |> Set.contains top.Ar.[a].[s]
 
                                     let ob =
-                                        map [ for B in S.Category.Objects do
+                                        Map [ for B in U.Category.Objects do
                                                   let X =
-                                                      S.Category.Hom.[B, A] |> Set.filter filter
+                                                      U.Category.Hom.[B, A] |> Set.filter filter
 
                                                   (B, X) ]
 
                                     let ar =
-                                        map [ for a in S.Category.Arrows do
+                                        Map [ for a in U.Category.Arrows do
                                                   let x =
-                                                      map [ for b in S.Category.Hom.[a.Cod, A] |> Set.filter filter do
-                                                                (b, S.Category.Compose.[b, a]) ]
+                                                      Map [ for b in U.Category.Hom.[a.Cod, A] |> Set.filter filter do
+                                                                (b, U.Category.Compose.[b, a]) ]
 
                                                   (a, x) ]
 
@@ -114,9 +120,9 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (S: Presheaf<'A, 'S>): Morphism<'A, 
                                         { Name = Name.empty
                                           Ob = ob
                                           Ar = ar
-                                          Category = S.Category }
+                                          Category = U.Category }
 
-                                    presheaf |> Presheaf.simplify cod.Ob.[A]
+                                    presheaf |> Presheaf.simplify Om.Ob.[A]
 
                                 (s, cs) ]
 
@@ -125,8 +131,8 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (S: Presheaf<'A, 'S>): Morphism<'A, 
     { Name = name
       Mapping = mapping
       Dom = top
-      Cod = cod
-      Category = S.Category }
+      Cod = Om
+      Category = U.Category }
 
 /// Internal NOT. (p139 Goldblatt.)
 let internalNot (cat: Category<'A>): Morphism<'A, Heart<'A>, Heart<'A>> =
@@ -136,17 +142,35 @@ let internalNot (cat: Category<'A>): Morphism<'A, Heart<'A>, Heart<'A>> =
 
 /// Internal AND. (p139 Goldblatt.)
 let internalAnd (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> =
-    let t = cat |> truth
+    let t = truth cat
 
     let TT =
         (t, t) ||> Morphism.tuple |> Morphism.image
 
     let Om = omega cat
-    let OmOm = (Om, Om) ||> Presheaf.product
-    TT |> subobjectToChar OmOm
+    TT |> subobjectToChar (Om * Om)
 
 /// Internal OR. (p139 Goldblatt.)
-let internalOr (_cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> = failwith "todo"
+let internalOr (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> =
+    let Om = omega cat
+    let one = Morphism.id Om
+
+    let chi_T =
+        cat
+        |> truth
+        |> Morphism.image
+        |> subobjectToChar Om
+
+    (Morphism.tuple chi_T one, Morphism.tuple one chi_T)
+    ||> Morphism.cotuple
+    |> Morphism.image
+    |> subobjectToChar (Om * Om)
 
 /// Internal IMPLIES. (p139 Goldblatt.)
-let internalImplies (_cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> = failwith "todo"
+let internalImply (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A>> =
+    let Om = omega cat
+    let pi_1 = Morphism.proj1 (Om * Om)
+
+    (internalAnd cat, pi_1)
+    ||> Presheaf.equaliser
+    |> subobjectToChar (Om * Om)

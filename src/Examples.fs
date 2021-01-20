@@ -15,10 +15,6 @@ module Sets =
     let yo = Yoneda.yo cat
     let hP = yo.Object P
 
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F
-
 module Bisets =
     type Bisets = Bisets of string
     let P, S = Bisets "P", Bisets "S"
@@ -31,10 +27,6 @@ module Bisets =
 
     let yo = Yoneda.yo cat
     let hP, hS = yo.Object P, yo.Object S
-
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F
 
 module Bouquets =
     type Bouquets = Bouquets of string
@@ -50,10 +42,6 @@ module Bouquets =
     let yo = Yoneda.yo cat
     let hV, hL = yo.Object V, yo.Object L
 
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F
-
 module Graphs =
     type Graphs = Graphs of string
     let V, E = Graphs "V", Graphs "E"
@@ -67,10 +55,6 @@ module Graphs =
 
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
-
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F
 
 module RGraphs =
     type RGraphs = RGraphs of string
@@ -102,10 +86,6 @@ module RGraphs =
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
 
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F
-
 module TruncESets =
     type TruncESets = TruncESets of string
     let V = TruncESets "V"
@@ -129,7 +109,3 @@ module TruncESets =
 
     let yo = Yoneda.yo cat
     let hV = yo.Object V
-
-    let (*) F G = Presheaf.product F G
-    let (+) F G = Presheaf.sum F G
-    let (^) F G = Presheaf.exp cat G F

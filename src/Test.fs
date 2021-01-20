@@ -17,20 +17,20 @@ module DeterministicTests =
                 let rhs =
                     (hP + hP) + (hS + hS + hS + hS + hS + hS)
 
-                Presheaf.isIso lhs rhs
+                lhs == rhs
 
     module Bouquets =
         open Examples.Bouquets
 
         type Bouquets =
             // Reyes p60--62
-            static member ``hV ^ hV = hL`` = Presheaf.isIso (hV ^ hV) hL
-            static member ``hV ^ hL = hV`` = Presheaf.isIso (hV ^ hL) hV
-            static member ``hL ^ hV = hL`` = Presheaf.isIso (hL ^ hV) hL
-            static member ``hL ^ hL = hL`` = Presheaf.isIso (hL ^ hL) hL
+            static member ``hV ^ hV ~= hL`` = hV ^ hV == hL
+            static member ``hV ^ hL ~= hV`` = hV ^ hL == hV
+            static member ``hL ^ hV ~= hL`` = hL ^ hV == hL
+            static member ``hL ^ hL ~= hL`` = hL ^ hL == hL
 
-            static member ``2hV ^ 2hV = 4hL`` =
-                Presheaf.isIso ((hV + hV) ^ (hV + hV)) (hL + hL + hL + hL)
+            static member ``2hV ^ 2hV ~= 4hL`` =
+                (hV + hV) ^ (hV + hV) == hL + hL + hL + hL
 
             // Reyes p41
             static member ``equaliser of double loops endomaps`` =
@@ -43,11 +43,11 @@ module DeterministicTests =
                 let g = endomorphisms |> Seq.item 0 // Careful to get the right ones!
                 let h = endomorphisms |> Seq.item 3 //
                 let K = Presheaf.equaliser g h
-                Presheaf.isIso K hV
+                K == hV
 
             // Reyes p47
             static member ``gluing two loops at their point by coequaliser`` =
-                let F = Presheaf.sum hL hL
+                let F = hL + hL
                 let maps = Morphism.hom hV F
                 let f = maps |> Seq.item 0
                 let g = maps |> Seq.item 1
@@ -61,7 +61,7 @@ module DeterministicTests =
                     let ar = map [ (v, map [ (1, 1); (2, 1) ]) ]
                     Presheaf.make "J" cat ob ar
 
-                Presheaf.isIso J K
+                J == K
 
     module Graphs =
         open Examples.Graphs
@@ -69,11 +69,10 @@ module DeterministicTests =
         type Graphs =
 
             // Reyes p39
-            static member ``hV + hV = hV * hE`` = Presheaf.isIso (hV + hV) (hV * hE)
+            static member ``hV + hV ~= hV * hE`` = hV + hV == hV * hE
 
             // Reyes p40
-            static member ``hE * hE = 2hV + hE`` =
-                Presheaf.isIso (hE * hE) (hE + (hV + hV))
+            static member ``hE * hE ~= 2hV + hE`` = hE * hE == hE + (hV + hV)
 
             // Reyes p51
             static member ``gluing a loop to the tip of an arrow by pushout`` =
@@ -108,7 +107,7 @@ module DeterministicTests =
 
                     Presheaf.make "J" cat ob ar
 
-                Presheaf.isIso J K
+                J == K
 
             // Reyes p88
             static member Omega_Graphs =
@@ -138,7 +137,7 @@ module DeterministicTests =
 
                     Presheaf.make "F" cat ob nontrivAr
 
-                Presheaf.isIso F (Truth.omega cat)
+                F == Truth.omega cat
 
     module RGraphs =
         open Examples.RGraphs
@@ -186,7 +185,7 @@ module DeterministicTests =
 
                     Presheaf.make "F" cat ob nontrivAr
 
-                Presheaf.isIso F (Truth.omega cat)
+                F == Truth.omega cat
 
 module RandomTests =
 
@@ -286,87 +285,87 @@ module RandomTests =
     let ``F + 0 ~= F`` cat =
         let O = Presheaf.zero cat
         let F = genComplexPushout cat |> sample
-        Presheaf.isIso (Presheaf.sum F O) F
+        F + O == F
 
     let ``F * 0 ~= 0`` cat =
         let O = Presheaf.zero cat
         let F = genComplexPushout cat |> sample
-        Presheaf.isIso (Presheaf.product F O) O
+        F * O == O
 
     let ``F * 1 ~= 1`` cat =
         let I = Presheaf.one cat
         let F = genComplexPushout cat |> sample
-        Presheaf.isIso (Presheaf.product F I) F
+        F * I == F
 
     let ``F + G ~= G + F`` cat =
         let F = genCoequaliser cat |> sample
         let G = genCoequaliser cat |> sample
-        Presheaf.isIso (Presheaf.sum F G) (Presheaf.sum G F)
+        F + G == G + F
 
     let ``F * G ~= G * F`` cat =
         let F = genCoequaliser cat |> sample
         let G = genCoequaliser cat |> sample
-        Presheaf.isIso (Presheaf.product F G) (Presheaf.product G F)
+        F * G == G * F
 
     let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only compare cardinalities.
         let F = genCoequaliser cat |> sample
         let G = genCoequaliser cat |> sample
         let H = genCoequaliser cat |> sample
-        Set.count (Morphism.hom (Presheaf.product F G) H) = Set.count (Morphism.hom F (Presheaf.exp cat G H))
+        Set.count (Morphism.hom (F * G) H) = Set.count (Morphism.hom F (H ^ G))
 
     let ``# sub F = # hom <F, Omega>`` cat = // Note we only compare cardinalities.
         let F = genCoequaliser cat |> sample
-        let subF = Subobject.subobjects cat F
+        let subF = Subobject.subobjects F
         let Om = Truth.omega cat
         Set.count (Morphism.hom F Om) = Set.count subF
 
     let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
         let F = genCoequaliser cat |> sample
-        let subalg = (Subobject.subalgebra cat F)
+        let alg = (Subobject.algebra F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
-        let d = Subobject.boundary subalg
+        let d = Subobject.boundary alg
         let eq (X, Y) = d (X * Y) = (d X * Y) + (X * d Y)
-        subalg.Subobjects |> Set.square |> Set.forall eq
+        alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
         let F = genCoequaliser cat |> sample
-        let subalg = (Subobject.subalgebra cat F)
+        let alg = (Subobject.algebra F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
-        let d = Subobject.boundary subalg
+        let d = Subobject.boundary alg
         let eq (X, Y) = d (X + Y) + d (X * Y) = d X + d Y
-        subalg.Subobjects |> Set.square |> Set.forall eq
+        alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``omega-axiom isomorphism`` cat =
         let F = genCoequaliser cat |> sample
-        let subalg = (Subobject.subalgebra cat F)
-        let chi = Truth.subobjectToChar cat subalg.Top
-        let psi = Truth.charToSubobject cat
+        let alg = (Subobject.algebra F)
+        let chi = Truth.subobjectToChar alg.Top
+        let psi = Truth.charToSubobject
         let Om = Truth.omega cat
 
-        (subalg.Subobjects
+        (alg.Subobjects
          |> Set.forall (fun S -> S |> chi |> psi = S))
-        && (Morphism.hom subalg.Top Om
+        && (Morphism.hom alg.Top Om
             |> Set.forall (fun n -> n |> psi |> chi = n))
 
     let ``exists-preimage-forall adjunction`` cat =
         let f = genHom cat
-        let pi = Subobject.preimage cat f
-        let ex = Subobject.exists cat f
-        let fa = Subobject.forall cat f
-        let subalgF = Subobject.subalgebra cat f.Dom
-        let subalgG = Subobject.subalgebra cat f.Cod
-        let subG = subalgF.Subobjects
-        let subH = subalgG.Subobjects
+        let pi = Subobject.preimage f
+        let ex = Subobject.exists f
+        let fa = Subobject.forall f
+        let algF = Subobject.algebra f.Dom
+        let algG = Subobject.algebra f.Cod
+        let subG = algF.Subobjects
+        let subH = algG.Subobjects
 
         let adjunction1 (S, T) =
-            subalgG.LessEq.[ex.[S], T]
-            <=> subalgF.LessEq.[S, pi.[T]]
+            algG.LessEq.[ex.[S], T]
+            <=> algF.LessEq.[S, pi.[T]]
 
         let adjunction2 (S, T) =
-            subalgG.LessEq.[T, fa.[S]]
-            <=> subalgF.LessEq.[pi.[T], S]
+            algG.LessEq.[T, fa.[S]]
+            <=> algF.LessEq.[pi.[T], S]
 
         (subG, subH)
         ||> Set.product
@@ -377,7 +376,7 @@ module RandomTests =
 
         (neg, neg)
         ||> Morphism.compose
-        |> Topology.isTopology cat
+        |> Topology.isTopology
 
     // todo: pullback of monic is monic
     // todo: pasting lemma

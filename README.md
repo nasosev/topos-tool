@@ -17,6 +17,8 @@ version: prerelease
   - examples are in the directory "nb".
 - tests
   - run the tests by entering `dotnet fsi test/Test.fsx` at your terminal.
+- other stuff
+  - for performance reasons topos-tool will usually not prevent you from doing operations on incompatible objects (e.g. taking an equaliser of morphisms with unequal domains/codomains). in these cases meaningless data or errors may result. i will implement safeguards against this if i can find out how to do so without excessive performance loss.
 
 ## features
 - categories

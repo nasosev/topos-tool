@@ -3,9 +3,11 @@
 module Topology
 
 /// Checks if the given morphism Om -> Om is a topology.
-let isTopology (cat: Category<'A>) (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool =
-    let T = cat |> Truth.truth |> Morphism.image
-    let (&&&) = Truth.internalAnd cat
+let isTopology (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool =
+    let T =
+        j.Category |> Truth.truth |> Morphism.image
+
+    let (&&&) = Truth.internalAnd j.Category
 
     let cond1 j = Morphism.apply j T = T
     let cond2 j = Morphism.compose j j = j
@@ -19,25 +21,16 @@ let isTopology (cat: Category<'A>) (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool
 let topologies (cat: Category<'A>): Set<Morphism<'A, Heart<'A>, Heart<'A>>> =
     let Om = Truth.omega cat
     let hom = (Om, Om) ||> Morphism.hom
-    hom |> Set.filter (isTopology cat)
+    hom |> Set.filter isTopology
 
 /// Gives the closure of a subobject relative to a topology.
-let closure (cat: Category<'A>)
-            (subalg: Subalgebra<'A, 'S>)
-            (j: Morphism<'A, Heart<'A>, Heart<'A>>)
-            (S: Presheaf<'A, 'S>)
-            : Presheaf<'A, 'S> =
-    let chiS =
-        S |> Truth.subobjectToChar cat subalg.Top
+let closure (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (S: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let chiS = S |> Truth.subobjectToChar alg.Top
 
     (j, chiS)
     ||> Morphism.compose
-    |> Truth.charToSubobject cat
+    |> Truth.charToSubobject
 
 /// Checks if a subobject is dense relative to a topology.
-let dense (cat: Category<'A>)
-          (subalg: Subalgebra<'A, 'S>)
-          (j: Morphism<'A, Heart<'A>, Heart<'A>>)
-          (S: Presheaf<'A, 'S>)
-          : bool =
-    S = closure cat subalg j S
+let isDense (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (S: Presheaf<'A, 'S>): bool =
+    S = closure alg j S

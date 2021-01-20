@@ -1,4 +1,4 @@
-#load "../scripts/LoadCompiled.fsx"
+#load "../scripts/Load.fsx"
 #r "nuget: FsCheck"
 
 

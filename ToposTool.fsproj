@@ -16,6 +16,7 @@
         <Compile Include="src\Truth.fs" />
         <Compile Include="src\Topology.fs" />
         <Compile Include="src\Examples.fs" />
+        <Compile Include="src\Syntax.fs" />
         <Compile Include="src\Test.fs" />
         <Compile Include="src\Latex.fs" />
     </ItemGroup>

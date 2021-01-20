@@ -121,9 +121,6 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
 
     make name.String objects nonidArrows compose
 
-/// Infix version of Category.product.
-let (*) product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> = product C D
-
 /// Binary sum of categories.
 let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
 
@@ -173,15 +170,12 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
 
     make name.String objects nonidArrows compose
 
-/// Infix version of Category.sum.
-let (+) sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> = sum C D
-
 /// Category of elements of a presheaf.
-let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
+let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     let name = Name.categoryOfElements F.Name
 
     let objects =
-        set [ for A in cat.Objects do
+        set [ for A in F.Category.Objects do
                   for X in F.Ob.[A] do
                       (A, X) ]
 
@@ -191,7 +185,7 @@ let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
           Cod = (a.Cod, X') }
 
     let nonidArrows =
-        set [ for a in cat.NonidArrows do
+        set [ for a in F.Category.NonidArrows do
                   F.Ob.[a.Cod]
                   |> Set.filter (fun s -> Set.contains F.Ar.[a].[s] F.Ob.[a.Dom])
                   |> Set.map (fun s -> lift (F.Ar.[a].[s], s) a) ]
@@ -207,7 +201,7 @@ let ofElements (cat: Category<'A>) (F: Presheaf<'A, 'S>): Category<'A * 'S> =
                   for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
                       let ba =
                           let dom, cod = (snd b.Dom, snd a.Cod)
-                          lift (dom, cod) (cat.Compose.[proj1 b, proj1 a])
+                          lift (dom, cod) (F.Category.Compose.[proj1 b, proj1 a])
 
                       ((b, a), ba) ]
 

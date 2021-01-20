@@ -26,7 +26,10 @@ let make (nameString: string)
 
         Map.union idArrow nonidArrows
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = cat }
 
 /// Initial presheaf.
 let zero (cat: Category<'A>): Presheaf<'A, 'S> =
@@ -40,7 +43,8 @@ let zero (cat: Category<'A>): Presheaf<'A, 'S> =
 
     { Name = Name.ofString "0"
       Ob = ob
-      Ar = ar }
+      Ar = ar
+      Category = cat }
 
 /// Terminal presheaf.
 let one (cat: Category<'A>): Presheaf<'A, unit> =
@@ -54,7 +58,8 @@ let one (cat: Category<'A>): Presheaf<'A, unit> =
 
     { Name = Name.ofString "1"
       Ob = ob
-      Ar = ar }
+      Ar = ar
+      Category = cat }
 
 /// Binary product of presheaves.
 let product (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, 'S * 'T> = Morphism.presheafProduct F G
@@ -81,7 +86,10 @@ let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 
                   let x = Map.restrict f.Dom.Ar.[a] ob.[a.Cod]
                   (a, x) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = f.Category }
 
 /// Pullback of presheaves, i.e. limit of the diagram
 /// F --n--> H <--m-- G
@@ -102,7 +110,10 @@ let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, '
                   let x = Map.restrict FG.Ar.[a] ob.[a.Cod]
                   (a, x) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = f.Category }
 
 /// Coequaliser of presheaves, i.e. colimit of the diagram
 /// F --n--> G
@@ -132,7 +143,10 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
 
                   (a, x) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = f.Category }
 
 /// Pushout of presheaves, i.e. colimit of the diagram
 /// F <--n-- H --m--> G
@@ -167,12 +181,15 @@ let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Se
 
                   (a, x) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = f.Category }
 
 /// Exponential of presheaves G^F.
-let exp (cat: Category<'A>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>> =
+let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>> =
     let name = Name.exp F.Name G.Name
-    let yo = Yoneda.yo cat
+    let yo = Yoneda.yo F.Category
 
     let ob =
         map [ for A in Map.dom F.Ob do
@@ -190,7 +207,10 @@ let exp (cat: Category<'A>) (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Preshea
 
                   (a, x) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = F.Category }
 
 /// Determines if two presheaves are isomorphic.
 let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =

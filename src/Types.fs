@@ -28,11 +28,13 @@ type Category<'A when 'A: comparison> =
 
 /// Type of a presheaf into homogenous sets of type `'S` containing object and arrow functions.
 /// Overrides comparison so `Name` is ignored.
+/// `Category` field is ignored in comparisons for performance.
 [<CustomEquality; CustomComparison; StructuredFormatDisplay("{Name}")>]
 type Presheaf<'A, 'S when 'A: comparison and 'S: comparison> =
     { Name: Name
       Ob: Map<'A, Set<'S>>
-      Ar: Map<Arrow<'A>, Map<'S, 'S>> }
+      Ar: Map<Arrow<'A>, Map<'S, 'S>>
+      Category: Category<'A> }
     override x.Equals(yobj) =
         match yobj with
         | :? (Presheaf<'A, 'S>) as y -> (x.Ob = y.Ob && x.Ar = y.Ar) // WARNING: order of conjuction has a big performance impact.
@@ -53,12 +55,14 @@ type Heart<'A when 'A: comparison> = Presheaf<'A, Arrow<'A>>
 
 /// Type of morphisms between presheaves.
 /// Overrides comparison so `Name` is ignored.
+/// `Category` field is ignored in comparisons for performance.
 [<CustomEquality; CustomComparison; StructuredFormatDisplay("{Name}")>]
 type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparison> =
     { Name: Name
       Mapping: Map<'A, Map<'S, 'T>>
       Dom: Presheaf<'A, 'S>
-      Cod: Presheaf<'A, 'T> }
+      Cod: Presheaf<'A, 'T>
+      Category: Category<'A> }
     override x.Equals(yobj) =
         match yobj with
         | :? (Morphism<'A, 'S, 'T>) as y -> x.Mapping = y.Mapping && x.Cod = y.Cod // Dom is automatically equal if Mapping is for valid morphisms but we need to distinguish between codomain and image.
@@ -80,7 +84,7 @@ type GenericFunctor<'O, 'A> = { Name: Name; Object: 'O; Arrow: 'A }
 
 /// Type for a (bi)heyting algebra of subobjects.
 [<StructuredFormatDisplay("{Top}")>]
-type Subalgebra<'A, 'S when 'A: comparison and 'S: comparison> =
+type Algebra<'A, 'S when 'A: comparison and 'S: comparison> =
     { Top: Presheaf<'A, 'S>
       Bot: Presheaf<'A, 'S>
       Subobjects: Set<Presheaf<'A, 'S>>

@@ -14,7 +14,7 @@ type Name = { String: string }
 type Arrow<'A> = { Name: Name; Dom: 'A; Cod: 'A }
 
 /// Type of a category with generic objects.
-/// It is intended that ``A` is a single-case DU type, e.g. `type Sets = Sets of string`.
+/// It is intended that `'A` is a single-case DU type, e.g. `type Sets = Sets of string`.
 /// This ensures type safety.
 [<StructuredFormatDisplay("{Name}")>]
 type Category<'A when 'A: comparison> =

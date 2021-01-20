@@ -341,14 +341,14 @@ module RandomTests =
     let ``omega-axiom isomorphism`` cat =
         let F = genCoequaliser cat |> sample
         let subalg = (Subobject.subalgebra cat F)
-        let phi = Truth.subobjectToChar cat subalg.Top
+        let chi = Truth.subobjectToChar cat subalg.Top
         let psi = Truth.charToSubobject cat
         let Om = Truth.omega cat
 
         (subalg.Subobjects
-         |> Set.forall (fun S -> S |> phi |> psi = S))
+         |> Set.forall (fun S -> S |> chi |> psi = S))
         && (Morphism.hom subalg.Top Om
-            |> Set.forall (fun n -> n |> psi |> phi = n))
+            |> Set.forall (fun n -> n |> psi |> chi = n))
 
     let ``exists-preimage-forall adjunction`` cat =
         let f = genHom cat
@@ -377,7 +377,7 @@ module RandomTests =
 
         (neg, neg)
         ||> Morphism.compose
-        |> Topology.isModality cat
+        |> Topology.isTopology cat
 
     // todo: pullback of monic is monic
     // todo: pasting lemma

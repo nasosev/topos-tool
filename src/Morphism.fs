@@ -243,7 +243,9 @@ let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice
 
 /// Tuple of morphisms.
 let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, ('T * 'U)> =
-    if f.Dom <> g.Dom then failwith "Cannot tuple morphisms with different domains."
+    if f.Dom <> g.Dom
+    then failwith "Cannot tuple morphisms with different domains."
+
     let name = Name.tuple f.Name g.Name
 
     let mapping =
@@ -261,7 +263,9 @@ let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, 
 
 /// Cotuple of morphisms.
 let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Choice<'T, 'U>, 'S> =
-    if f.Cod <> g.Cod then failwith "Cannot cotuple morphisms with different codomains."
+    if f.Cod <> g.Cod
+    then failwith "Cannot cotuple morphisms with different codomains."
+
     let name = Name.cotuple f.Name g.Name
 
     let mapping =

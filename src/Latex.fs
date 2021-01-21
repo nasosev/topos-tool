@@ -7,7 +7,7 @@ let ofGeneric (o: _): string =
 
     let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
 
-    let regexReplace (pattern: string) (replacement: string) (input: string) =
+    let regexReplace (pattern: string) (replacement: string) (input: string): string =
         System.Text.RegularExpressions.Regex.Replace(input, pattern, replacement)
 
     let regexReplaceRec replace input =
@@ -75,23 +75,23 @@ let ofMapMap (x: Map<'A, Map<_, _>>): string =
 
 let ofArrow (a: Arrow<_>): string =
     $"{nameof a.Name}: {ofName a.Name}
-        {nameof a.Dom}: {a.Dom}$$$$
+        {nameof a.Dom}: {a.Dom}
         {nameof a.Cod}: {a.Cod}"
 
 let ofMorphism (f: Morphism<_, _, _>): string =
-    $"{nameof f.Name}: {ofName f.Name}$$$$
-        {nameof f.Dom}: {ofName f.Dom.Name}$$$$
-        {nameof f.Cod}: {ofName f.Cod.Name}$$$$
+    $"{nameof f.Name}: {ofName f.Name}
+        {nameof f.Dom}: {ofName f.Dom.Name}
+        {nameof f.Cod}: {ofName f.Cod.Name}
         {nameof f.Mapping}: {ofMapMap f.Mapping}"
 
 let ofCategory (C: Category<_>): string =
-    $"{nameof C.Name}: {ofName C.Name}$$$$
-        {nameof C.Objects}: {ofSeq C.Objects}$$$$
-        {nameof C.Hom}: {ofMap C.Hom}$$$$
-        {nameof C.Id}: {ofMap C.Id}$$$$
+    $"{nameof C.Name}: {ofName C.Name}
+        {nameof C.Objects}: {ofSeq C.Objects}
+        {nameof C.Hom}: {ofMap C.Hom}
+        {nameof C.Id}: {ofMap C.Id}
         {nameof C.Compose}: {ofMap C.Compose}"
 
 let ofPresheaf (F: Presheaf<_, _>): string =
-    $"{nameof F.Name}: {ofName F.Name}$$$$
-        {nameof F.Ob}: {ofMap F.Ob}$$$$
+    $"{nameof F.Name}: {ofName F.Name}
+        {nameof F.Ob}: {ofMap F.Ob}
         {nameof F.Ar}: {ofMapMap (F.Ar |> Map.restrict F.Category.NonidArrows)}"

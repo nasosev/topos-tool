@@ -12,13 +12,21 @@ version: prerelease
     - [mac](https://fsharp.org/use/mac/)
     - [win](https://fsharp.org/use/windows/)
     - [freebsd](https://fsharp.org/use/freebsd/)
+- building
+  - in the root directory, build by entering at your terminal:
+    ```
+    dotnet build --configuration Release
+    ```
 - notebooks
-  - this program is intended to be used in .ipynb notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive for details on how to set this up.
+  - this program is intended to be used in `.ipynb` notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive for details on how to set this up.
   - examples are in the directory "nb".
 - tests
-  - run the tests by entering `dotnet fsi test/Test.fsx` at your terminal.
+  - in the root directory, run tests by entering at your terminal:
+    ```
+    dotnet fsi test/Test.fsx
+    ```
 - other stuff
-  - for performance reasons topos-tool will usually not prevent you from doing operations on incompatible objects (e.g. taking an equaliser of morphisms with unequal domains/codomains). in these cases meaningless data or errors may result. i will implement safeguards against this if i can find out how to do so without excessive performance loss.
+  - topos-tool will usually not prevent you from doing operations on incompatible objects (e.g. taking an equaliser of morphisms with unequal domains/codomains). in these cases meaningless data or errors will result. i will eventually implement safeguards against.
 
 ## features
 - categories

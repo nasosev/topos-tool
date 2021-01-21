@@ -18,16 +18,16 @@ let negate (name: Name): Name = { String = $"@-{name.String}" }
 let supplement (name: Name): Name = { String = $"~{name.String}" }
 let boundary (name: Name): Name = { String = @$"\partial{name.String}" }
 let coboundary (name: Name): Name = { String = $"d{name.String}" }
-let proj (i: int) (name: Name) = { String = @$"\pi_{i}{name.String}" }
-let coproj (i: int) (name: Name) = { String = @$"\iota_{i}{name.String}" }
+let proj (i: int) (name: Name): Name = { String = @$"\pi_{i}{name.String}" }
+let coproj (i: int) (name: Name): Name = { String = @$"\iota_{i}{name.String}" }
 
-let preimage (name: Name) (name': Name) =
+let preimage (name: Name) (name': Name): Name =
     { String = @$"{{{name.String}}}^{{*}}{{{name'.String}}}" }
 
-let exists (name: Name) (name': Name) =
+let exists (name: Name) (name': Name): Name =
     { String = @$"\existsl_{{{name.String}}}{{{name'.String}}}" }
 
-let forall (name: Name) (name': Name) =
+let forall (name: Name) (name': Name): Name =
     { String = @$"\forall_{{{name.String}}}{{{name'.String}}}" }
 
 let product (name: Name) (name': Name): Name =

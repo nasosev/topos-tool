@@ -38,6 +38,18 @@ module List =
                 @ yss) [] (listProduct zss)
         | _ -> []
 
+    /// Permutations of a list.
+    let rec permutations (xs: List<'A>) =
+        if List.isEmpty xs then
+            [ [] ]
+        else
+            [ for x in xs do
+                yield!
+                    xs
+                    |> List.filter ((<>) x)
+                    |> permutations
+                    |> List.map (fun xs -> x :: xs) ]
+
 [<RequireQualifiedAccess>]
 module Set =
 
@@ -401,6 +413,11 @@ module Map =
 
     /// Set of bijections X -> Y.
     let iso (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
-        if Set.count X <> Set.count Y
-        then set []
-        else (X, Y) ||> exp |> Set.filter (isBijective Y)
+        if Set.count X <> Set.count Y then
+            set []
+        else
+            Y
+            |> Set.toList
+            |> List.permutations
+            |> List.map (List.zip (X |> Set.toList) >> Map)
+            |> Set

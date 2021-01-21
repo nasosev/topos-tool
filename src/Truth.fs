@@ -6,11 +6,9 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
     let yo = Yoneda.yo cat
 
     let ob =
-        let sub = Subobject.sub cat
-
         Map [ for A in cat.Objects do
                   let hA = yo.Object A
-                  let X = sub.Object hA
+                  let X = Subobject.subobjects hA
                   (A, X) ]
 
     let ar =

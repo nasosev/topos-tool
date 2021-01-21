@@ -75,8 +75,8 @@ let ofMapMap (x: Map<'A, Map<_, _>>): string =
 
 let ofArrow (a: Arrow<_>): string =
     $"{nameof a.Name}: {ofName a.Name}
-        {nameof a.Dom}: {a.Dom}
-        {nameof a.Cod}: {a.Cod}"
+        {nameof a.Dom}: $${ofGeneric a.Dom}$$
+        {nameof a.Cod}: $${ofGeneric a.Cod}$$"
 
 let ofMorphism (f: Morphism<_, _, _>): string =
     $"{nameof f.Name}: {ofName f.Name}
@@ -87,8 +87,8 @@ let ofMorphism (f: Morphism<_, _, _>): string =
 let ofCategory (C: Category<_>): string =
     $"{nameof C.Name}: {ofName C.Name}
         {nameof C.Objects}: {ofSeq C.Objects}
+        {nameof C.Arrows}: {ofSeq C.Arrows}
         {nameof C.Hom}: {ofMap C.Hom}
-        {nameof C.Id}: {ofMap C.Id}
         {nameof C.Compose}: {ofMap C.Compose}"
 
 let ofPresheaf (F: Presheaf<_, _>): string =

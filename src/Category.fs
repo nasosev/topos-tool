@@ -199,13 +199,15 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
               Dom = fst a.Dom
               Cod = fst a.Cod }
 
-        Map [ for a in nonidArrows do
-                  for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
-                      let ba =
-                          let dom, cod = (snd b.Dom, snd a.Cod)
-                          lift (dom, cod) (F.Category.Compose.[proj1 b, proj1 a])
+        [ for a in nonidArrows do
+            for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
+                let ba =
+                    let dom, cod = (snd a.Dom, snd b.Cod)
+                    lift (dom, cod) (F.Category.Compose.[proj1 b, proj1 a])
 
-                      ((b, a), ba) ]
+                ((b, a), ba) ]
+        |> List.filter (fun ((_, _), ba) -> F.Category.NonidArrows |> Set.contains (proj1 ba))
+        |> Map
 
     make name.String objects nonidArrows compose
 

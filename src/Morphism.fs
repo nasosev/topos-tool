@@ -50,7 +50,7 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
     |> List.filter (Map >> isMorphism dom cod)
     |> List.mapi (fun i ls ->
         let name =
-            Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
+            Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 
         let mapping = Map ls
 
@@ -70,7 +70,7 @@ let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
     |> List.filter (Map >> isMorphism dom cod)
     |> List.mapi (fun i ls ->
         let name =
-            Name.sub (Name.hom dom.Name cod.Name) (Name.ofString $"{i}")
+            Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 
         let mapping = Map ls
 
@@ -88,7 +88,7 @@ let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
     let ob =
         Map [ for A in f.Category.Objects do
                   let X =
-                      Set.map (fun x -> f.Mapping.[A].[x]) dom.Ob.[A]
+                      dom.Ob.[A] |> Set.map (fun x -> f.Mapping.[A].[x])
 
                   (A, X) ]
 

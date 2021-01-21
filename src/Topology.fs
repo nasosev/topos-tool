@@ -4,12 +4,11 @@ module Topology
 
 /// Checks if the given morphism Om -> Om is a topology.
 let isTopology (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool =
-    let T =
-        j.Category |> Truth.truth |> Morphism.image
+    let t = j.Category |> Truth.truth
 
     let (&&&) = Truth.internalAnd j.Category
 
-    let cond1 j = Morphism.apply j T = T
+    let cond1 j = Morphism.compose j t = t
     let cond2 j = Morphism.compose j j = j
 
     let cond3 j =

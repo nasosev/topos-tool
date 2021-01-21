@@ -5,7 +5,7 @@ module Subobject
 /// Subobject functor.
 let sub (_cat: Category<'A>)
         : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), Morphism<'A, 'S, 'T> -> Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>>> =
-    let name = Name.ofString "Sub"
+    let name = Name.subobject
 
     // Gives a descriptive name for a subpresheaf with the specified objects and arrow maps.
     let nameSubpresheaf (i: int) (F: Presheaf<'A, 'S>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): Name =
@@ -14,7 +14,7 @@ let sub (_cat: Category<'A>)
         else Name.sub F.Name Name.bot
 
     let ob (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> =
-        let presheaves =
+        let subobjects =
             [ for A in F.Category.Objects do
                 [ for X in Set.powerset F.Ob.[A] do
                     (A, X) ] ]
@@ -38,7 +38,7 @@ let sub (_cat: Category<'A>)
                 presheaf)
             |> set
 
-        presheaves
+        subobjects
 
     let ar (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> =
         Map [ for S in ob f.Cod do

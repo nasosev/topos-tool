@@ -8,6 +8,7 @@ let omega = { String = @"\Omega" }
 let one = { String = "!" }
 let top = { String = @"\top" }
 let bot = { String = @"\bot" }
+let subobject = { String = "Sub" }
 let ofString (s: string): Name = { String = s }
 let ofInt (i: int): Name = { String = $"{i}" }
 let name a: Name = { String = $"{a}" }

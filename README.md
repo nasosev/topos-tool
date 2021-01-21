@@ -15,7 +15,7 @@ version: prerelease
 - building
   - in the root directory, build by entering at your terminal:
     ```
-    dotnet build --configuration Release
+    dotnet build -c release
     ```
 - notebooks
   - this program is intended to be used in `.ipynb` notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive for details on how to set this up.

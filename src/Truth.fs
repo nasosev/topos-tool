@@ -21,13 +21,13 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
                                 let g = yo.Arrow a
                                 let pb = Presheaf.pullback h g
 
-                                let proj =
+                                let proj = // Simplify the name of the projection for display.
                                     (Morphism.proj2 pb).Cod
-                                    |> Presheaf.simplify ob.[a.Dom] // Rename the elements.
+                                    |> Presheaf.simplify ob.[a.Dom]
 
-                                (F, proj) ] // Rename the elements.
+                                (F, proj) ]
 
-                  (a, x) ] // Rename the elements.
+                  (a, x) ]
 
     { Name = Name.omega
       Ob = ob
@@ -155,13 +155,12 @@ let internalOr (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A
     let Om = omega cat
     let one = Morphism.id Om
 
-    let chi_T =
-        cat
-        |> truth
-        |> Morphism.image
-        |> subobjectToChar Om
+    let const_T =
+        let t = truth cat
+        let one = Om |> Morphism.one cat
+        Morphism.compose t one
 
-    (Morphism.tuple chi_T one, Morphism.tuple one chi_T)
+    (Morphism.tuple const_T one, Morphism.tuple one const_T)
     ||> Morphism.cotuple
     |> Morphism.image
     |> subobjectToChar (Om * Om)

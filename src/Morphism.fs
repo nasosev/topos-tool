@@ -311,3 +311,36 @@ let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Ch
 // todo
 let eval (exp: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>) (arg: Presheaf<'A, Arrow<'S>>): Presheaf<'A, 'T> =
     failwith "todo"
+
+/// Terminal presheaf here because it is relied on by Morphism.one.
+let internal presheafOne (cat: Category<'A>): Presheaf<'A, unit> =
+    let ob =
+        Map [ for A in cat.Objects do
+                  (A, set [ () ]) ]
+
+    let ar =
+        Map [ for a in cat.Arrows do
+                  (a, Map [ (), () ]) ]
+
+    { Name = Name.ofInt 1
+      Ob = ob
+      Ar = ar
+      Category = cat }
+
+/// Morphism to the terminal object.
+let one (cat: Category<'A>) (dom: Presheaf<'A, 'S>): Morphism<'A, 'S, unit> =
+    let name = Name.one
+
+    let mapping =
+        Map [ for A in cat.Objects do
+                  let x = Map.constant dom.Ob.[A] ()
+                  (A, x) ]
+
+    let dom = dom
+    let cod = presheafOne cat
+
+    { Name = name
+      Mapping = mapping
+      Dom = dom
+      Cod = cod
+      Category = dom.Category }

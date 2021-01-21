@@ -259,6 +259,9 @@ module Map =
     /// Gives the identity map on a set.
     let id (X: Set<'A>): Map<'A, 'A> = X |> Set.map (fun s -> (s, s)) |> Map
 
+    /// Gives the constant map on a set to a given element of the codomain.
+    let constant (X: Set<'A>) (t: 'B): Map<'A, 'B> = X |> Set.map (fun s -> (s, t)) |> Map
+
     /// Composes maps.
     let compose (x: Map<'B, 'C>) (y: Map<'A, 'B>): Map<'A, 'C> = y |> Map.map (fun _ t -> x.[t])
 

@@ -41,25 +41,13 @@ let zero (cat: Category<'A>): Presheaf<'A, 'S> =
         Map [ for a in cat.Arrows do
                   (a, Map.empty) ]
 
-    { Name = Name.ofString "0"
+    { Name = Name.ofInt 0
       Ob = ob
       Ar = ar
       Category = cat }
 
 /// Terminal presheaf.
-let one (cat: Category<'A>): Presheaf<'A, unit> =
-    let ob =
-        Map [ for A in cat.Objects do
-                  (A, set [ () ]) ]
-
-    let ar =
-        Map [ for a in cat.Arrows do
-                  (a, Map [ (), () ]) ]
-
-    { Name = Name.ofString "1"
-      Ob = ob
-      Ar = ar
-      Category = cat }
+let one (cat: Category<'A>): Presheaf<'A, unit> = Morphism.presheafOne cat
 
 /// Binary product of presheaves.
 let product (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, 'S * 'T> = Morphism.presheafProduct F G

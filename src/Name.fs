@@ -5,6 +5,7 @@ module Name
 let empty = { String = "" }
 let yo = { String = "h" }
 let omega = { String = @"\Omega" }
+let one = { String = "!" }
 let top = { String = @"\top" }
 let bot = { String = @"\bot" }
 let ofString (s: string): Name = { String = s }
@@ -13,7 +14,7 @@ let name a: Name = { String = $"{a}" }
 let id (A: 'A): Name = { String = $"1_{{%A{A}}}" }
 let char (name: Name): Name = { String = @$"\chi_{{{name.String}}}" }
 let categoryOfElements (name: Name): Name = { String = @$"\int {name.String}" }
-let negate (name: Name): Name = { String = $"@!{name.String}" }
+let negate (name: Name): Name = { String = $"@-{name.String}" }
 let supplement (name: Name): Name = { String = $"~{name.String}" }
 let boundary (name: Name): Name = { String = @$"\partial{name.String}" }
 let coboundary (name: Name): Name = { String = $"d{name.String}" }

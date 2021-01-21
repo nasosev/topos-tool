@@ -36,7 +36,7 @@ let ofGeneric (o: _): string =
     |> replace @"->" @"\to "
     |> replace @"=>" @"\Rightarrow "
     |> replace @"~" @"{\sim} "
-    |> replace @"!" @"\neg "
+    |> replace @"-" @"\neg "
     |> replace @"/\" @"\land "
     |> replace @"\/" @"\lor "
     |> replace @"@" @"\circ "

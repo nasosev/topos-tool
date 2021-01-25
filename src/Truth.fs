@@ -19,9 +19,9 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
                                 let g = Morphism.inc F h.Cod
                                 let pb = Presheaf.pullback h g
 
-                                let proj = // Simplify the name of the projection for display.
+                                let proj = // Identify the name of the projection with a subpresheaf for legibility.
                                     (Morphism.proj1 pb).Cod
-                                    |> Presheaf.simplify ob.[a.Dom]
+                                    |> Presheaf.identify ob.[a.Dom]
 
                                 (F, proj) ]
 
@@ -120,7 +120,7 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 
                                           Ar = ar
                                           Category = U.Category }
 
-                                    presheaf |> Presheaf.simplify Om.Ob.[A]
+                                    presheaf |> Presheaf.identify Om.Ob.[A]
 
                                 (s, cs) ]
 

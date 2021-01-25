@@ -233,5 +233,22 @@ let forall (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
 
               (S, fa_f) ]
 
-/// Square, Diamond in a biheyting algebra of subobjects. (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
-/// todo
+/// Necessity (square). (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
+let necessity (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.necessity U.Name
+    let iterate (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> = V |> supplement alg |> negate alg
+
+    let rec recurse (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+        if V = iterate V then V else V |> iterate |> recurse
+
+    recurse U |> Presheaf.rename name
+
+/// Possibility (diamond). (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
+let possibility (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+    let name = Name.possibility U.Name
+    let iterate (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> = V |> negate alg |> supplement alg
+
+    let rec recurse (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+        if V = iterate V then V else V |> iterate |> recurse
+
+    recurse U |> Presheaf.rename name

@@ -15,10 +15,12 @@ let name a: Name = { String = $"{a}" }
 let id (A: 'A): Name = { String = $"1_{{%A{A}}}" }
 let char (name: Name): Name = { String = @$"\chi_{{{name.String}}}" }
 let categoryOfElements (name: Name): Name = { String = @$"\int {name.String}" }
-let negate (name: Name): Name = { String = $"@-{name.String}" }
+let negate (name: Name): Name = { String = $"-{name.String}" }
 let supplement (name: Name): Name = { String = $"~{name.String}" }
 let boundary (name: Name): Name = { String = @$"\partial{name.String}" }
 let coboundary (name: Name): Name = { String = $"d{name.String}" }
+let possibility (name: Name): Name = { String = @$"\diamond {name.String}" }
+let necessity (name: Name): Name = { String = @$"\square {name.String}" }
 let proj (i: int) (name: Name): Name = { String = @$"\pi_{i}{name.String}" }
 let coproj (i: int) (name: Name): Name = { String = @$"\iota_{i}{name.String}" }
 

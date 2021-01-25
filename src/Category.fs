@@ -3,12 +3,12 @@
 module Category
 
 /// Helper function to create a category given a name, a set of objects, a set of nontrivial arrows, and map of nontrivial compositions.
-let make (nameStr: string)
+let make (nameString: string)
          (objects: Set<'A>)
          (nonidArrows: Set<Arrow<'A>>)
          (nontrivCompose: Map<(Arrow<'A> * Arrow<'A>), Arrow<'A>>)
          =
-    let name = Name.ofString nameStr
+    let name = Name.ofString nameString
 
     let id =
         Map [ for A in objects do
@@ -107,7 +107,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
 
     let compose =
         let filterNonid (compose: Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>)
-                        : (Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>) =
+                        : Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>> =
             compose
             |> Map.filter (fun (a, b) c ->
                 Set.contains a nonidArrows
@@ -158,7 +158,7 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
             |> Set.map (tripleMap coproj2)
 
         let filterNonid (compose: Map<(Arrow<Choice<'A, 'B>> * Arrow<Choice<'A, 'B>>), Arrow<Choice<'A, 'B>>>)
-                        : (Map<(Arrow<Choice<'A, 'B>> * Arrow<Choice<'A, 'B>>), Arrow<Choice<'A, 'B>>>) =
+                        : Map<(Arrow<Choice<'A, 'B>> * Arrow<Choice<'A, 'B>>), Arrow<Choice<'A, 'B>>> =
             compose
             |> Map.filter (fun (a, b) c ->
                 Set.contains a nonidArrows

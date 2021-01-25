@@ -215,7 +215,7 @@ let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
     |> List.exists (Map >> Morphism.isMorphism F G)
 
 /// Renames the input presheaf with a name of an identical element in the simplification set.
-let simplify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
+let identify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     input
     |> fun F -> (F, Seq.tryFind ((=) F) targetSet)
     |> fun (F, optionG) ->
@@ -225,3 +225,31 @@ let simplify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presh
 
 /// Renames a presheaf.
 let rename (name: Name) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> = { F with Name = name }
+
+/// Given a presheaf of type `F` returns an isomorphic presheaf whose figures are of type `int` numbered 0..[size - 1].
+let simplify (nameString: string) (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
+    let name = Name.ofString nameString
+
+    let figureToInt X s = List.findIndex ((=) s) (Set.toList X)
+
+    let ob =
+        Map [ for A in F.Category.Objects do
+                  let X =
+                      F.Ob.[A]
+                      |> Set.map (fun s -> s |> figureToInt F.Ob.[A])
+
+                  (A, X) ]
+
+    let ar =
+        Map [ for a in F.Category.Arrows do
+                  let x =
+                      F.Ar.[a]
+                      |> Seq.map (fun (KeyValue (k, v)) -> (figureToInt F.Ob.[a.Cod] k, figureToInt F.Ob.[a.Dom] v))
+                      |> Map
+
+                  (a, x) ]
+
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Category = F.Category }

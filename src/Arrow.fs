@@ -3,8 +3,8 @@
 module Arrow
 
 /// Helper function to create an arrow with a given name, domain and codomain.
-let make (nameStr: string) (dom: 'A) (cod: 'A): Arrow<'A> =
-    { Name = Name.ofString nameStr
+let make (nameString: string) (dom: 'A) (cod: 'A): Arrow<'A> =
+    { Name = Name.ofString nameString
       Dom = dom
       Cod = cod }
 

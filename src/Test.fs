@@ -306,7 +306,7 @@ module RandomTests =
         let (+) = Subobject.join
         let (*) = Subobject.meet
         let d = Subobject.boundary alg
-        let eq (X, Y) = d (X * Y) = (d X * Y) + (X * d Y)
+        let eq (U, V) = d (U * V) = (d U * V) + (U * d V)
         alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
@@ -315,7 +315,33 @@ module RandomTests =
         let (+) = Subobject.join
         let (*) = Subobject.meet
         let d = Subobject.boundary alg
-        let eq (X, Y) = d (X + Y) + d (X * Y) = d X + d Y
+        let eq (U, V) = d (U + V) + d (U * V) = d U + d V
+        alg.Subobjects |> Set.square |> Set.forall eq
+
+    let ``necessity <= identity <= possibility`` cat =
+        let F = genCoequaliser cat |> sample
+        let alg = (Subobject.algebra F)
+
+        let square = Subobject.necessity alg
+        let diamond = Subobject.possibility alg
+
+        let eq U =
+            alg.LessEq.[square U, U]
+            && alg.LessEq.[U, diamond U]
+
+        alg.Subobjects |> Set.forall eq
+
+    let ``possibility-necessity adjunction`` cat =
+        let F = genCoequaliser cat |> sample
+        let alg = (Subobject.algebra F)
+
+        let square = Subobject.necessity alg
+        let diamond = Subobject.possibility alg
+
+        let eq (U, V) =
+            alg.LessEq.[diamond U, V]
+            <=> alg.LessEq.[U, square V]
+
         alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``omega-axiom isomorphism`` cat =
@@ -326,7 +352,7 @@ module RandomTests =
         let Om = Truth.omega cat
 
         (alg.Subobjects
-         |> Set.forall (fun S -> S |> chi |> psi = S))
+         |> Set.forall (fun U -> U |> chi |> psi = U))
         && (Morphism.hom alg.Top Om
             |> Set.forall (fun n -> n |> psi |> chi = n))
 
@@ -340,17 +366,17 @@ module RandomTests =
         let subG = algF.Subobjects
         let subH = algG.Subobjects
 
-        let adjunction1 (S, T) =
-            algG.LessEq.[ex.[S], T]
-            <=> algF.LessEq.[S, pi.[T]]
+        let adjunction1 (U, V) =
+            algG.LessEq.[ex.[U], V]
+            <=> algF.LessEq.[U, pi.[V]]
 
-        let adjunction2 (S, T) =
-            algG.LessEq.[T, fa.[S]]
-            <=> algF.LessEq.[pi.[T], S]
+        let adjunction2 (U, V) =
+            algG.LessEq.[V, fa.[U]]
+            <=> algF.LessEq.[pi.[V], U]
 
         (subG, subH)
         ||> Set.product
-        |> Set.forall (fun ST -> adjunction1 ST && adjunction2 ST)
+        |> Set.forall (fun UV -> adjunction1 UV && adjunction2 UV)
 
     let ``double negation morphism is topology`` cat =
         let neg = Truth.internalNot cat
@@ -383,6 +409,10 @@ module RandomTests =
             static member ``(Sets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
+            static member ``(Sets) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(Sets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
             static member ``(Sets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Sets) exists-preimage-forall adjunction`` =
@@ -412,6 +442,10 @@ module RandomTests =
             static member ``(Bisets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
+            static member ``(Bisets) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(Bisets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
             static member ``(Bisets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Bisets) exists-preimage-forall adjunction`` =
@@ -441,6 +475,10 @@ module RandomTests =
             static member ``(Bouquets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
+            static member ``(Bouquets) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(Bouquets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
             static member ``(Bouquets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Bouquets) exists-preimage-forall adjunction`` =
@@ -470,7 +508,11 @@ module RandomTests =
             static member ``(Graphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``(Graphs) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(Graphs) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``(Graphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(Graphs) exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
@@ -499,6 +541,10 @@ module RandomTests =
             static member ``(RGraphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
+            static member ``(RGraphs) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(RGraphs) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
             static member ``(RGraphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(RGraphs) exists-preimage-forall adjunction`` =
@@ -528,6 +574,10 @@ module RandomTests =
             static member ``(TruncESets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
+            static member ``(TruncESets) necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``(TruncESets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
             static member ``(TruncESets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
             static member ``(TruncESets) exists-preimage-forall adjunction`` =

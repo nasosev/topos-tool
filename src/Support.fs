@@ -39,7 +39,7 @@ module List =
         | _ -> []
 
     /// Permutations of a list.
-    let rec permutations (xs: List<'A>) =
+    let rec permutations (xs: List<'A>): List<List<'A>> =
         if List.isEmpty xs then
             [ [] ]
         else

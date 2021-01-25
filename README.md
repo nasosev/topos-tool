@@ -24,8 +24,9 @@ version: prerelease
   - in the root directory, run tests by entering at your terminal:
     ```
     dotnet fsi test/Test.fsx
-
+    ```
 ## features
+- latex output
 - categories
   - binary products/sums
   - category of elements
@@ -44,7 +45,6 @@ version: prerelease
   - boundary/coboundary
   - quantifiers
 - lawvere-tierney topologies
-- latex output
 
 ## to do
 - comma categories

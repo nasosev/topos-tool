@@ -18,7 +18,7 @@ let make (nameString: string)
          : Morphism<'A, 'S, 'T> =
     if not (isMorphism dom cod mapping)
        || not (dom.Category = cod.Category) then
-        failwith "That is not a morphism."
+        failwith Error.makeMorphism
 
     let name = Name.ofString nameString
 
@@ -267,8 +267,7 @@ let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice
 
 /// Tuple of morphisms.
 let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, ('T * 'U)> =
-    if f.Dom <> g.Dom
-    then failwith "Cannot tuple morphisms with different domains."
+    if f.Dom <> g.Dom then failwith Error.domainMismatch
 
     let name = Name.tuple f.Name g.Name
 
@@ -288,8 +287,7 @@ let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, 
 
 /// Cotuple of morphisms.
 let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Choice<'T, 'U>, 'S> =
-    if f.Cod <> g.Cod
-    then failwith "Cannot cotuple morphisms with different codomains."
+    if f.Cod <> g.Cod then failwith Error.codomainMismatch
 
     let name = Name.cotuple f.Name g.Name
 
@@ -310,7 +308,7 @@ let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Ch
 /// Evaluation map of the exponential.
 // todo
 let eval (exp: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>) (arg: Presheaf<'A, Arrow<'S>>): Presheaf<'A, 'T> =
-    failwith "todo"
+    failwith Error.todo
 
 /// Terminal presheaf here because it is relied on by Morphism.one.
 let internal presheafOne (cat: Category<'A>): Presheaf<'A, unit> =

@@ -15,12 +15,12 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
         Map [ for a in cat.Arrows do
                   let x =
                       Map [ for F in ob.[a.Cod] do
-                                let h = Morphism.id F
-                                let g = yo.Arrow a
+                                let h = yo.Arrow a
+                                let g = Morphism.inc F h.Cod
                                 let pb = Presheaf.pullback h g
 
                                 let proj = // Simplify the name of the projection for display.
-                                    (Morphism.proj2 pb).Cod
+                                    (Morphism.proj1 pb).Cod
                                     |> Presheaf.simplify ob.[a.Dom]
 
                                 (F, proj) ]

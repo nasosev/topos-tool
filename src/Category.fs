@@ -74,7 +74,7 @@ let make (nameStr: string)
 
          pairs
          |> Set.forall (fun ab -> composable ab => Set.contains ab composeDomain)) then
-        failwith "Not all composable pairs appear in the compose map." // Check all composable pairs appear in the composition map.
+        failwith Error.makeCategory
 
     { Name = name
       Objects = objects

@@ -316,10 +316,8 @@ module Map =
                   | Choice2Of2 v -> (Choice2Of2 v, Choice2Of2 y.[v]) ]
 
     /// Binary tuple of maps.
+    /// WARNING: does not check domains match.
     let tuple (x: Map<'A, 'B>) (y: Map<'A, 'C>): Map<'A, 'B * 'C> =
-        if dom x <> dom y
-        then failwith "Cannot tuple maps with different domains."
-
         Map [ for a in dom x do
                   (a, (x.[a], y.[a])) ]
 

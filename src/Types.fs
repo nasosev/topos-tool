@@ -2,7 +2,7 @@
 [<AutoOpen>]
 module Types
 
-// WARNING: the order or fields in a record may have a huge performance impact!
+// WARNING: the order or fields in a record or propositions in a conjunction may have a big performance impact!
 
 /// Type of names.
 [<StructuredFormatDisplay("{String}")>]
@@ -28,7 +28,6 @@ type Category<'A when 'A: comparison> =
 
 /// Type of a presheaf into homogenous sets of type `'S` containing object and arrow functions.
 /// Overrides comparison so `Name` is ignored.
-/// `Category` field is ignored in comparisons for performance.
 [<CustomEquality; CustomComparison; StructuredFormatDisplay("{Name}")>]
 type Presheaf<'A, 'S when 'A: comparison and 'S: comparison> =
     { Name: Name
@@ -37,10 +36,14 @@ type Presheaf<'A, 'S when 'A: comparison and 'S: comparison> =
       Category: Category<'A> }
     override x.Equals(yobj) =
         match yobj with
-        | :? (Presheaf<'A, 'S>) as y -> (x.Ob = y.Ob && x.Ar = y.Ar) // WARNING: order of conjuction has a big performance impact.
+        | :? (Presheaf<'A, 'S>) as y ->
+            (x.Ob = y.Ob
+             && x.Ar = y.Ar
+             && x.Category = y.Category)
         | _ -> false
 
-    override x.GetHashCode() = hash x.Ob ^^^ hash x.Ar
+    override x.GetHashCode() =
+        hash x.Ob ^^^ hash x.Ar ^^^ hash x.Category
 
     interface System.IComparable with
         member x.CompareTo yobj =
@@ -65,17 +68,21 @@ type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparis
       Category: Category<'A> }
     override x.Equals(yobj) =
         match yobj with
-        | :? (Morphism<'A, 'S, 'T>) as y -> x.Mapping = y.Mapping && x.Cod = y.Cod // Dom is automatically equal if Mapping is for valid morphisms but we need to distinguish between codomain and image.
+        | :? (Morphism<'A, 'S, 'T>) as y ->
+            x.Mapping = y.Mapping
+            && x.Cod = y.Cod
+            && x.Category = y.Category // Dom is automatically equal if Mapping is for valid morphisms but we need to distinguish between codomain and image.
         | _ -> false
 
-    override x.GetHashCode() = hash x.Mapping ^^^ hash x.Cod
+    override x.GetHashCode() =
+        hash x.Mapping ^^^ hash x.Cod ^^^ hash x.Category
 
     interface System.IComparable with
         member x.CompareTo yobj =
             match yobj with
             | :? (Morphism<'A, 'S, 'T>) as y ->
                 let c = compare x.Mapping y.Mapping
-                if c <> 0 then c else compare x.Cod y.Cod
+                if c <> 0 then c else compare x.Cod y.Cod // Comparing the `Category` field has a bad performance cost.
             | _ -> invalidArg "yobj" "cannot compare values of different types"
 
 /// Type for a generic functor is just a container for an object map and an arrow map.

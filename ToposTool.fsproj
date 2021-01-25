@@ -6,6 +6,7 @@
     <ItemGroup>
         <Compile Include="src\Support.fs" />
         <Compile Include="src\Types.fs" />
+        <Compile Include="src\Error.fs" />
         <Compile Include="src\Name.fs" />
         <Compile Include="src\Arrow.fs" />
         <Compile Include="src\Category.fs" />

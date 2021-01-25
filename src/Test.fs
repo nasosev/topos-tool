@@ -536,14 +536,14 @@ module RandomTests =
             static member ``(TruncESets) double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
-let testDeterministic () =
+let deterministic () =
     let config = { Config.Default with MaxTest = 1 }
     Check.All<DeterministicTests.Bisets.Bisets>(config)
     Check.All<DeterministicTests.Bouquets.Bouquets>(config)
     Check.All<DeterministicTests.Graphs.Graphs>(config)
     Check.All<DeterministicTests.RGraphs.RGraphs>(config)
 
-let testRandom () =
+let random () =
     let config = { Config.Default with MaxTest = 100 }
     Check.All<RandomTests.Sets.Sets>(config)
     Check.All<RandomTests.Bisets.Bisets>(config)

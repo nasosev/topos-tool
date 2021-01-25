@@ -79,7 +79,8 @@ let ofArrow (a: Arrow<_>): string =
         {nameof a.Cod}: $${ofGeneric a.Cod}$$"
 
 let ofMorphism (f: Morphism<_, _, _>): string =
-    $"{nameof f.Name}: {ofName f.Name}
+    $"{nameof f.Category}: {ofName f.Category.Name}
+        {nameof f.Name}: {ofName f.Name}
         {nameof f.Dom}: {ofName f.Dom.Name}
         {nameof f.Cod}: {ofName f.Cod.Name}
         {nameof f.Mapping}: {ofMapMap f.Mapping}"
@@ -87,11 +88,12 @@ let ofMorphism (f: Morphism<_, _, _>): string =
 let ofCategory (C: Category<_>): string =
     $"{nameof C.Name}: {ofName C.Name}
         {nameof C.Objects}: {ofSeq C.Objects}
-        {nameof C.Arrows}: {ofSeq C.Arrows}
+        {nameof C.NonidArrows}: {ofSeq C.NonidArrows}
         {nameof C.Hom}: {ofMap C.Hom}
         {nameof C.Compose}: {ofMap C.Compose}"
 
 let ofPresheaf (F: Presheaf<_, _>): string =
-    $"{nameof F.Name}: {ofName F.Name}
+    $"{nameof F.Category}: {ofName F.Category.Name}
+        {nameof F.Name}: {ofName F.Name}
         {nameof F.Ob}: {ofMap F.Ob}
         {nameof F.Ar}: {ofMapMap (F.Ar |> Map.restrict F.Category.NonidArrows)}"

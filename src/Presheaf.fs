@@ -15,7 +15,7 @@ let make (nameString: string)
          (ob: Map<'A, Set<'S>>)
          (nonidArrows: Map<Arrow<'A>, Map<'S, 'S>>)
          : Presheaf<'A, 'S> =
-    if not (isPresheaf cat ob nonidArrows) then failwith "That is not a presheaf."
+    if not (isPresheaf cat ob nonidArrows) then failwith Error.makePresheaf
     let name = Name.ofString nameString
 
     let ar =
@@ -56,10 +56,12 @@ let product (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, 'S * 'T> =
 let sum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Choice<'S, 'T>> = Morphism.presheafSum F G
 
 /// Equaliser of presheaves, i.e. limit of the diagram
-/// F --n--> G
-///   --m-->
-/// WARNING: does not check that domains and codomains of f and g match.
+/// F --f--> G
+///   --g->
 let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 'S> =
+    if f.Dom <> g.Dom then failwith Error.domainMismatch
+    else if f.Cod <> g.Cod then failwith Error.codomainMismatch
+
     let name = Name.equaliser f.Name g.Name
 
     let ob =
@@ -80,9 +82,10 @@ let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 
       Category = f.Category }
 
 /// Pullback of presheaves, i.e. limit of the diagram
-/// F --n--> H <--m-- G
-/// WARNING: does not check that codomains of f and g match.
+/// F --f--> H <--g-- G
 let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, 'S * 'T> =
+    if f.Cod <> g.Cod then failwith Error.codomainMismatch
+
     let name =
         Name.pullback f.Dom.Name f.Cod.Name g.Dom.Name
 
@@ -104,10 +107,12 @@ let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, '
       Category = f.Category }
 
 /// Coequaliser of presheaves, i.e. colimit of the diagram
-/// F --n--> G
-///   --m-->
-/// WARNING: does not check that domains and codomains of f and g match.
+/// F --f--> G
+///   --g-->
 let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, Set<'T>> =
+    if f.Dom <> g.Dom then failwith Error.domainMismatch
+    else if f.Cod <> g.Cod then failwith Error.codomainMismatch
+
     let name = Name.coequaliser f.Name g.Name
 
     let ob =
@@ -137,9 +142,10 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
       Category = f.Category }
 
 /// Pushout of presheaves, i.e. colimit of the diagram
-/// F <--n-- H --m--> G
-/// WARNING: does not check that domains of f and g match.
+/// F <--f-- H --g--> G
 let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Set<Choice<'S, 'T>>> =
+    if f.Dom <> g.Dom then failwith Error.domainMismatch
+
     let name =
         Name.pushout f.Cod.Name f.Dom.Name g.Cod.Name
 

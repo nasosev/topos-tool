@@ -5,5 +5,5 @@ type Latex =
     static member print(F: Morphism<_, _, _>): LaTeXString = Latex.ofMorphism F |> LaTeXString
     static member print(X: Map<_, Map<_, _>>): LaTeXString = Latex.ofMapMap X |> LaTeXString
     static member print(X: seq<_>): LaTeXString = Latex.ofSeq X |> LaTeXString
-    static member mapPrint(x: Map<_, _>): LaTeXString = Latex.ofMap x |> LaTeXString // Todo: as above.
-    static member genericPrint(x: _): MathString = Latex.ofGeneric x |> MathString // Todo: must use different name because of https://github.com/fsharp/fslang-suggestions/issues/905 .
+    static member mapPrint(x: Map<_, _>): LaTeXString = Latex.ofMap x |> LaTeXString // Todo: must use different name because of https://github.com/fsharp/fslang-suggestions/issues/905 .
+    static member genericPrint(x: _): MathString = Latex.ofGeneric x |> MathString // Todo: as above.

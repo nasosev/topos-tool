@@ -38,19 +38,18 @@ version: prerelease
   - exponentials
   - isomorphisms
 - truth objects
+  - internal logic
 - biheyting algebra of subobjects
   - meets/joins
   - implication/subtraction
   - negation/supplement
   - boundary/coboundary
   - quantifiers
+  - modal operators
 - lawvere-tierney topologies
 
 ## to do
-- comma categories
 - general limits/colimits
-- modal operators
-- internal logic
 - geometric and logical morphisms
 - j-sheaves
 - ...

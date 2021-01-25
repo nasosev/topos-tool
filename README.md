@@ -24,7 +24,7 @@ version: prerelease
   - in the root directory, run tests by entering at your terminal:
     ```
     dotnet fsi test/Test.fsx
-
+    ```
 ## features
 - categories
   - binary products/sums

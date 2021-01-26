@@ -285,69 +285,91 @@ module Random =
         let po = (f, g) ||> Gen.map2 Presheaf.pushout
         (po, f, g)
 
-    // Generates a coequaliser of pushouts of binary products of representables.
-    let genCoequaliser cat =
+    // Generates a pushout of coproducts representables.
+    let genSmallPushout cat =
+        let (gG, gH, gI) =
+            cat |> genRepresentable |> Gen.three |> Gen.unzip3
+
+        let I = gI |> sample
+
+        let f =
+            (I, gG)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
+
+        let g =
+            (I, gH)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
+
+        let po = (f, g) ||> Gen.map2 Presheaf.pushout
+        (po, f, g)
+
+    /// Samples a random a morphism between.
+    let randomHom cat =
         cat
         |> genPushout
-        |> fun (a, _, _) -> a
-        |> Gen.two
-        |> Gen.unzip
-        ||> Gen.map2 Morphism.hom
-        |> genElementFromInhabitedSet
-        |> Gen.two
-        |> Gen.unzip
-        ||> Gen.map2 Presheaf.coequaliser
-
-    /// Generates a morphism between pushouts of reprsentables.
-    let genHom cat =
-        cat
-        |> genCoequaliser
+        |> fun (G, _, _) -> G
         |> Gen.two
         |> Gen.unzip
         ||> Gen.map2 Morphism.hom
         |> sampleSet
 
+    /// Samples a random presheaf.
+    let randomPresheaf cat =
+        genPushout cat
+        |> fun (G, _, _) -> G |> sample |> Presheaf.simplify
+
+    /// Samples a random presheaf.
+    let randomSmallPresheaf cat =
+        genSmallPushout cat
+        |> fun (G, _, _) -> G |> sample |> Presheaf.simplify
+
     // Category tests
 
     let ``F + 0 ~= F`` cat =
         let O = Presheaf.zero cat
-        let F = genCoequaliser cat |> sample
+        let F = randomPresheaf cat
         F + O == F
 
     let ``F * 0 ~= 0`` cat =
         let O = Presheaf.zero cat
-        let F = genCoequaliser cat |> sample
+        let F = randomPresheaf cat
         F * O == O
 
     let ``F * 1 ~= 1`` cat =
         let I = Presheaf.one cat
-        let F = genCoequaliser cat |> sample
+        let F = randomPresheaf cat
         F * I == F
 
     let ``F + G ~= G + F`` cat =
-        let F = genCoequaliser cat |> sample
-        let G = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
+        let G = randomSmallPresheaf cat //
         F + G == G + F
 
     let ``F * G ~= G * F`` cat =
-        let F = genCoequaliser cat |> sample
-        let G = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
+        let G = randomSmallPresheaf cat //
         F * G == G * F
 
     let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only compare cardinalities.
-        let F = genCoequaliser cat |> sample
-        let G = genCoequaliser cat |> sample
-        let H = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
+        let G = randomSmallPresheaf cat //
+        let H = randomSmallPresheaf cat //
         Set.count (Morphism.hom (F * G) H) = Set.count (Morphism.hom F (H ^ G))
 
     let ``# sub F = # hom <F, Omega>`` cat = // Note we only compare cardinalities.
-        let F = genCoequaliser cat |> sample
+        let F = randomPresheaf cat
         let subF = Subobject.subobjects F
         let Om = Truth.omega cat
         Set.count (Morphism.hom F Om) = Set.count subF
 
     let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
-        let F = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
         let alg = (Subobject.algebra F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
@@ -356,7 +378,7 @@ module Random =
         alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
-        let F = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
         let alg = (Subobject.algebra F)
         let (+) = Subobject.join
         let (*) = Subobject.meet
@@ -365,7 +387,7 @@ module Random =
         alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``necessity <= identity <= possibility`` cat =
-        let F = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
         let alg = (Subobject.algebra F)
 
         let square = Subobject.necessity alg
@@ -378,7 +400,7 @@ module Random =
         alg.Subobjects |> Set.forall eq
 
     let ``possibility-necessity adjunction`` cat =
-        let F = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
         let alg = (Subobject.algebra F)
 
         let square = Subobject.necessity alg
@@ -391,7 +413,7 @@ module Random =
         alg.Subobjects |> Set.square |> Set.forall eq
 
     let ``omega-axiom isomorphism`` cat =
-        let F = genCoequaliser cat |> sample
+        let F = randomSmallPresheaf cat // Small.
         let alg = (Subobject.algebra F)
         let chi = Truth.subobjectToChar alg.Top
         let psi = Truth.charToSubobject
@@ -403,7 +425,7 @@ module Random =
             |> Set.forall (fun n -> n |> psi |> chi = n))
 
     let ``exists-preimage-forall adjunction`` cat =
-        let f = genHom cat
+        let f = randomHom cat
         let pi = Subobject.preimage f
         let ex = Subobject.exists f
         let fa = Subobject.forall f
@@ -425,7 +447,7 @@ module Random =
         |> Set.forall (fun UV -> adjunction1 UV && adjunction2 UV)
 
     let ``frobenius identity`` cat =
-        let f = genHom cat
+        let f = randomHom cat
         let (.*) = Subobject.meet
         let pi = Subobject.preimage f
         let ex = Subobject.exists f
@@ -466,7 +488,6 @@ module Random =
 
         Map.compose pre_g ex_f = Map.compose ex_g' pre_f'
         && Map.compose pre_f fa_g = Map.compose fa_f' pre_g'
-    // && forall cond mac mer
 
     let ``double negation morphism is topology`` cat =
         let neg = Truth.internalNot cat
@@ -703,5 +724,5 @@ let random () =
     Check.All<Random.Bisets.Bisets>(config)
     Check.All<Random.Bouquets.Bouquets>(config)
     Check.All<Random.Graphs.Graphs>(config)
-//Check.All<RandomTests.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
-//Check.All<RandomTests.TruncESets.TruncESets>(config) //
+//Check.All<Random.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
+//Check.All<Random.TruncESets.TruncESets>(config) //

@@ -2,13 +2,17 @@
 [<RequireQualifiedAccess>]
 module Morphism
 
-/// Determines if the map of presheaves is a morphism.
+/// Determines if the map of presheaves is natural.
+let isNatural (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (mapping: Map<'A, Map<'S, 'T>>): bool =
+    dom.Category.NonidArrows
+    |> Set.forall (fun a ->
+        dom.Ob.[a.Cod]
+        |> Set.forall (fun x -> mapping.[a.Dom].[dom.Ar.[a].[x]] = cod.Ar.[a].[mapping.[a.Cod].[x]]))
+
+/// Determines if the map of presheaves is natural and defined on all objects in the domain.
 let isMorphism (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (mapping: Map<'A, Map<'S, 'T>>): bool =
-    Map.dom mapping = dom.Category.Objects // Check the mapping is defined on all objects.
-    && dom.Category.NonidArrows
-       |> Set.forall (fun a ->
-           dom.Ob.[a.Cod]
-           |> Set.forall (fun x -> mapping.[a.Dom].[dom.Ar.[a].[x]] = cod.Ar.[a].[mapping.[a.Cod].[x]]))
+    Map.dom mapping = dom.Category.Objects
+    && isNatural dom cod mapping
 
 /// Helper function to make a morphism.
 let make (nameString: string)
@@ -35,7 +39,7 @@ let isMono (f: Morphism<'A, 'S, 'T>): bool =
 /// Determines if the morphism is epi.
 let isEpi (f: Morphism<'A, 'S, 'T>): bool =
     f.Mapping
-    |> Map.forall (fun A x -> Map.isSurjective f.Cod.Ob.[A] x)
+    |> Map.forall (fun A -> Map.isSurjective f.Cod.Ob.[A])
 
 /// Determines if the morphism is an isomorphism.
 // Note: the order of conjunctions impacts performance due to short-circuiting.
@@ -47,7 +51,7 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         [ for x in Map.exp dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> Seq.filter (Map >> isMorphism dom cod)
+    |> Seq.filter (Map >> isNatural dom cod)
     |> Seq.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
@@ -67,7 +71,7 @@ let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         [ for x in Map.iso dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> Seq.filter (Map >> isMorphism dom cod)
+    |> Seq.filter (Map >> isNatural dom cod)
     |> Seq.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)

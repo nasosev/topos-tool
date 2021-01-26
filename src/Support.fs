@@ -42,7 +42,7 @@ module List =
     let permutations (xs: List<'A>): seq<List<'A>> =
         let rec permute: List<'A> -> seq<List<'A>> =
             function
-            | [] -> seq [ List.empty ]
+            | [] -> Seq.singleton List.empty
             | x :: xs -> Seq.collect (insert x) (permute xs)
 
         and insert (x: 'A): List<'A> -> List<List<'A>> =

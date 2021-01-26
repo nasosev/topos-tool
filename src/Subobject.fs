@@ -44,7 +44,7 @@ let sub (_cat: Category<'A>)
         Map [ for S in ob f.Cod do
                   let inclusion = Morphism.inc S f.Cod
                   let pb = Presheaf.pullback f inclusion
-                  let proj = pb |> Morphism.proj1 |> Morphism.image
+                  let proj = (pb |> Morphism.proj1).Cod
                   (S, proj) ]
 
     { Name = name; Object = ob; Arrow = ar }
@@ -182,7 +182,7 @@ let preimage (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> 
               let pre_f =
                   let inc = Morphism.inc T cod.Top
                   let pb = Presheaf.pullback f inc
-                  let proj = pb |> Morphism.proj1 |> Morphism.image
+                  let proj = (pb |> Morphism.proj1).Cod
 
                   proj
                   |> Presheaf.rename (Name.preimage f.Name T.Name)

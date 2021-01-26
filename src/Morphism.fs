@@ -47,8 +47,8 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         [ for x in Map.exp dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.filter (Map >> isMorphism dom cod)
-    |> List.mapi (fun i ls ->
+    |> Seq.filter (Map >> isMorphism dom cod)
+    |> Seq.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 
@@ -67,8 +67,8 @@ let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         [ for x in Map.iso dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> List.filter (Map >> isMorphism dom cod)
-    |> List.mapi (fun i ls ->
+    |> Seq.filter (Map >> isMorphism dom cod)
+    |> Seq.mapi (fun i ls ->
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 

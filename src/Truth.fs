@@ -20,7 +20,9 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
                                 let pb = Presheaf.pullback h g
 
                                 let proj = // Identify the name of the projection with a subpresheaf for legibility.
-                                    (Morphism.proj1 pb).Cod
+                                    pb
+                                    |> Morphism.proj1
+                                    |> Morphism.image
                                     |> Presheaf.identify ob.[a.Dom]
 
                                 (F, proj) ]
@@ -83,8 +85,7 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
 let charToSubobject (c: Morphism<'A, 'S, Heart<'A>>): Presheaf<'A, 'S> =
     let t = truth c.Category
     let pb = Presheaf.pullback c t
-    let proj = Morphism.proj1 pb
-    proj.Cod
+    pb |> Morphism.proj1 |> Morphism.image
 
 /// Subobject to characteristic morphism. (p92 Reyes.)
 let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 'S, Heart<'A>> =
@@ -156,7 +157,7 @@ let internalOr (cat: Category<'A>): Morphism<'A, Heart<'A> * Heart<'A>, Heart<'A
     let const_T =
         let t = truth cat
         let one = Om |> Morphism.one cat
-        Morphism.compose t one
+        t @ one
 
     (Morphism.tuple const_T one, Morphism.tuple one const_T)
     ||> Morphism.cotuple

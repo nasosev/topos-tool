@@ -4,7 +4,7 @@ module Test
 
 open FsCheck
 
-module DeterministicTests =
+module Deterministic =
     module Bisets =
         open Examples.Bisets
 
@@ -187,7 +187,7 @@ module DeterministicTests =
 
                 F == Truth.omega cat
 
-module RandomTests =
+module Random =
 
     /// Samples from a generator.
     let sample g = g |> Gen.sample 0 1 |> Seq.exactlyOne
@@ -223,10 +223,48 @@ module RandomTests =
         ||> Gen.map2 Morphism.hom
         |> Gen.filter (Set.isEmpty >> not)
 
-    // Generates a pushout of representables.
-    let genSimplePushout cat =
+    /// Generates a morphism from a presheaf to a generated presheaf.
+    let genHomGenToFixed gG H =
+        (gG, Gen.constant H)
+        ||> Gen.map2 Morphism.hom
+        |> Gen.filter (Set.isEmpty >> not)
+
+    // Generates a coproduct of representables.
+    let genRepCoproduct cat =
+        cat
+        |> genRepresentable
+        |> Gen.two
+        |> Gen.unzip
+        ||> Gen.map2 Presheaf.sum
+
+    // Generates a pullback of coproducts of representables.
+    let genPullback cat =
         let (gG, gH, gI) =
-            cat |> genRepresentable |> Gen.three |> Gen.unzip3
+            cat |> genRepCoproduct |> Gen.three |> Gen.unzip3
+
+        let I = gI |> sample
+
+        let f =
+            (gG, I)
+            ||> genHomGenToFixed
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
+
+        let g =
+            (gH, I)
+            ||> genHomGenToFixed
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
+
+        let pb = (f, g) ||> Gen.map2 Presheaf.pullback
+        (pb, f, g)
+
+    // Generates a pushout of coproducts representables.
+    let genPushout cat =
+        let (gG, gH, gI) =
+            cat |> genRepCoproduct |> Gen.three |> Gen.unzip3
 
         let I = gI |> sample
 
@@ -234,18 +272,24 @@ module RandomTests =
             (I, gG)
             ||> genHomFixedToGen
             |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
 
         let g =
             (I, gH)
             ||> genHomFixedToGen
             |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
 
-        (f, g) ||> Gen.map2 Presheaf.pushout
+        let po = (f, g) ||> Gen.map2 Presheaf.pushout
+        (po, f, g)
 
     // Generates a coequaliser of pushouts of binary products of representables.
     let genCoequaliser cat =
         cat
-        |> genSimplePushout
+        |> genPushout
+        |> fun (a, _, _) -> a
         |> Gen.two
         |> Gen.unzip
         ||> Gen.map2 Morphism.hom
@@ -262,6 +306,8 @@ module RandomTests =
         |> Gen.unzip
         ||> Gen.map2 Morphism.hom
         |> sampleSet
+
+    // Category tests
 
     let ``F + 0 ~= F`` cat =
         let O = Presheaf.zero cat
@@ -378,226 +424,284 @@ module RandomTests =
         ||> Set.product
         |> Set.forall (fun UV -> adjunction1 UV && adjunction2 UV)
 
+    let ``frobenius identity`` cat =
+        let f = genHom cat
+        let (.*) = Subobject.meet
+        let pi = Subobject.preimage f
+        let ex = Subobject.exists f
+        let algF = Subobject.algebra f.Dom
+        let algG = Subobject.algebra f.Cod
+        let subG = algF.Subobjects
+        let subH = algG.Subobjects
+
+        let eq (U, V) = ex.[pi.[V] .* U] = V .* ex.[U]
+
+        (subG, subH) ||> Set.product |> Set.forall eq
+
+    let ``beck-chevalley condition`` cat =
+        let (P, f, g) =
+            genPullback cat
+            |> fun (a, b, c) -> (sample a, sample b, sample c)
+
+        let f' =
+            let proj = Morphism.proj1 P
+            let inc = Morphism.inc proj.Cod f.Dom
+            inc @ proj
+
+        let g' =
+            let proj = Morphism.proj2 P
+            let inc = Morphism.inc proj.Cod g.Dom
+            inc @ proj
+
+        let ex_f = Subobject.exists f
+        let ex_g' = Subobject.exists g'
+
+        let fa_f' = Subobject.forall f'
+        let fa_g = Subobject.forall g
+
+        let pre_f = Subobject.preimage f
+        let pre_g = Subobject.preimage g
+        let pre_f' = Subobject.preimage f'
+        let pre_g' = Subobject.preimage g'
+
+        Map.compose pre_g ex_f = Map.compose ex_g' pre_f'
+        && Map.compose pre_f fa_g = Map.compose fa_f' pre_g'
+    // && forall cond mac mer
+
     let ``double negation morphism is topology`` cat =
         let neg = Truth.internalNot cat
 
-        (neg, neg)
-        ||> Morphism.compose
-        |> Topology.isTopology
-
-    // todo: pullback of monic is monic
-    // todo: pasting lemma
+        neg @ neg |> Topology.isTopology
 
     module Sets =
+
         open Examples.Sets
 
         type Sets =
-            static member ``(Sets) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(Sets) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(Sets) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(Sets) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(Sets) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(Sets) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(Sets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(Sets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(Sets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(Sets) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(Sets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(Sets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(Sets) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(Sets) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
     module Bisets =
         open Examples.Bisets
 
         type Bisets =
-            static member ``(Bisets) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(Bisets) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(Bisets) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(Bisets) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(Bisets) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(Bisets) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(Bisets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(Bisets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(Bisets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(Bisets) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(Bisets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(Bisets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(Bisets) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(Bisets) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
     module Bouquets =
         open Examples.Bouquets
 
         type Bouquets =
-            static member ``(Bouquets) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(Bouquets) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(Bouquets) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(Bouquets) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(Bouquets) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(Bouquets) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(Bouquets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(Bouquets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(Bouquets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(Bouquets) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(Bouquets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(Bouquets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(Bouquets) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(Bouquets) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
     module Graphs =
         open Examples.Graphs
 
         type Graphs =
-            static member ``(Graphs) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(Graphs) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(Graphs) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(Graphs) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(Graphs) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(Graphs) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(Graphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(Graphs) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(Graphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(Graphs) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(Graphs) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(Graphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(Graphs) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(Graphs) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
     module RGraphs =
         open Examples.RGraphs
 
         type RGraphs =
-            static member ``(RGraphs) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(RGraphs) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(RGraphs) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(RGraphs) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(RGraphs) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(RGraphs) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(RGraphs) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(RGraphs) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(RGraphs) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(RGraphs) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(RGraphs) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(RGraphs) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(RGraphs) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(RGraphs) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
     module TruncESets =
         open Examples.TruncESets
 
         type TruncESets =
-            static member ``(TruncESets) F + 0 ~= F`` = ``F + 0 ~= F`` cat
-            static member ``(TruncESets) F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
-            static member ``(TruncESets) F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``(TruncESets) F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``(TruncESets) F * G ~= G * F`` = ``F * G ~= G * F`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``(TruncESets) # hom<F * G, H> = # hom <F, G => H>`` =
+            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
                 ``# hom<F * G, H> = # hom <F, G => H>`` cat
 
-            static member ``(TruncESets) # sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
-            static member ``(TruncESets) d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
 
-            static member ``(TruncESets) d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
                 ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
 
-            static member ``(TruncESets) necessity <= identity <= possibility`` =
+            static member ``necessity <= identity <= possibility`` =
                 ``necessity <= identity <= possibility`` cat
 
-            static member ``(TruncESets) possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
-            static member ``(TruncESets) omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
 
-            static member ``(TruncESets) exists-preimage-forall adjunction`` =
+            static member ``exists-preimage-forall adjunction`` =
                 ``exists-preimage-forall adjunction`` cat
 
-            static member ``(TruncESets) double negation morphism is topology`` =
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
 let deterministic () =
     let config = { Config.Default with MaxTest = 1 }
-    Check.All<DeterministicTests.Bisets.Bisets>(config)
-    Check.All<DeterministicTests.Bouquets.Bouquets>(config)
-    Check.All<DeterministicTests.Graphs.Graphs>(config)
-    Check.All<DeterministicTests.RGraphs.RGraphs>(config)
+    Check.All<Deterministic.Bisets.Bisets>(config)
+    Check.All<Deterministic.Bouquets.Bouquets>(config)
+    Check.All<Deterministic.Graphs.Graphs>(config)
+    Check.All<Deterministic.RGraphs.RGraphs>(config)
 
 let random () =
-    let config = { Config.Default with MaxTest = 100 }
-    Check.All<RandomTests.Sets.Sets>(config)
-    Check.All<RandomTests.Bisets.Bisets>(config)
-    Check.All<RandomTests.Bouquets.Bouquets>(config)
-    Check.All<RandomTests.Graphs.Graphs>(config)
-    Check.All<RandomTests.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
-    Check.All<RandomTests.TruncESets.TruncESets>(config) //
+    let config = { Config.Default with MaxTest = 10 }
+    Check.All<Random.Sets.Sets>(config)
+    Check.All<Random.Bisets.Bisets>(config)
+    Check.All<Random.Bouquets.Bouquets>(config)
+    Check.All<Random.Graphs.Graphs>(config)
+//Check.All<RandomTests.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
+//Check.All<RandomTests.TruncESets.TruncESets>(config) //

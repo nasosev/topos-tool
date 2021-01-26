@@ -19,14 +19,14 @@ let sub (_cat: Category<'A>)
                 [ for X in Set.powerset F.Ob.[A] do
                     (A, X) ] ]
             |> List.listProduct
-            |> List.map (fun ls ->
+            |> Seq.map (fun ls ->
                 let ob = Map ls
 
                 ob,
                 Map [ for a in F.Category.Arrows do
                           (a, Map.restrict ob.[a.Cod] F.Ar.[a]) ])
-            |> List.filter (fun (ob, ar) -> Presheaf.isPresheaf F.Category ob ar)
-            |> List.mapi (fun i (ob, ar) ->
+            |> Seq.filter (fun (ob, ar) -> Presheaf.isPresheaf F.Category ob ar)
+            |> Seq.mapi (fun i (ob, ar) ->
                 let name = nameSubpresheaf i F ob ar
 
                 let presheaf =
@@ -44,7 +44,7 @@ let sub (_cat: Category<'A>)
         Map [ for S in ob f.Cod do
                   let inclusion = Morphism.inc S f.Cod
                   let pb = Presheaf.pullback f inclusion
-                  let proj = (Morphism.proj1 pb).Cod
+                  let proj = pb |> Morphism.proj1 |> Morphism.image
                   (S, proj) ]
 
     { Name = name; Object = ob; Arrow = ar }
@@ -181,8 +181,10 @@ let preimage (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>> 
     Map [ for T in cod.Subobjects do
               let pre_f =
                   let inc = Morphism.inc T cod.Top
+                  let pb = Presheaf.pullback f inc
+                  let proj = pb |> Morphism.proj1 |> Morphism.image
 
-                  (Presheaf.pullback inc f |> Morphism.proj2).Cod
+                  proj
                   |> Presheaf.rename (Name.preimage f.Name T.Name)
 
               (T, pre_f) ]
@@ -233,7 +235,7 @@ let forall (f: Morphism<'A, 'S, 'T>): Map<Presheaf<'A, 'S>, Presheaf<'A, 'T>> =
 
               (S, fa_f) ]
 
-/// Necessity (square). (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
+/// Necessity (square): the largest complemented subobject contained in `U`. (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
 let necessity (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.necessity U.Name
     let iterate (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> = V |> supplement alg |> negate alg
@@ -243,7 +245,7 @@ let necessity (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
 
     recurse U |> Presheaf.rename name
 
-/// Possibility (diamond). (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
+/// Possibility (diamond): the largest complemented subobject containing `U`. (p33, Reyes & Zolfaghari, Bi-heyting algebras, toposes and modalities.)
 let possibility (alg: Algebra<'A, 'S>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let name = Name.possibility U.Name
     let iterate (V: Presheaf<'A, 'S>): Presheaf<'A, 'S> = V |> negate alg |> supplement alg

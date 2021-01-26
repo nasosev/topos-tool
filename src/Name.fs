@@ -28,7 +28,7 @@ let preimage (name: Name) (name': Name): Name =
     { String = @$"{{{name.String}}}^{{*}}{{{name'.String}}}" }
 
 let exists (name: Name) (name': Name): Name =
-    { String = @$"\existsl_{{{name.String}}}{{{name'.String}}}" }
+    { String = @$"\exists_{{{name.String}}}{{{name'.String}}}" }
 
 let forall (name: Name) (name': Name): Name =
     { String = @$"\forall_{{{name.String}}}{{{name'.String}}}" }

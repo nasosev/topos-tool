@@ -28,27 +28,31 @@ module List =
             for y in ys do
                 (x, y) ]
 
-    /// Cartesian product of a list of lists; elements are lists and not tuples.
-    let rec listProduct: List<List<'A>> -> List<List<'A>> =
-        function
-        | [ zs ] -> List.fold (fun wss w -> [ w ] :: wss) [] zs
-        | zs :: zss ->
-            List.fold (fun yss ys ->
-                (List.fold (fun zss z -> (z :: ys) :: zss) [] zs)
-                @ yss) [] (listProduct zss)
-        | _ -> []
+    /// Cartesian product of a list of lists.
+    let rec listProduct (xss: List<List<'A>>): seq<List<'A>> =
+        match xss with
+        | [] -> Seq.singleton []
+        | xs :: xss ->
+            seq {
+                for x in xs do
+                    for xs in listProduct xss -> x :: xs
+            }
 
     /// Permutations of a list.
-    let rec permutations (xs: List<'A>): List<List<'A>> =
-        if List.isEmpty xs then
-            [ [] ]
-        else
-            [ for x in xs do
-                yield!
-                    xs
-                    |> List.filter ((<>) x)
-                    |> permutations
-                    |> List.map (fun xs -> x :: xs) ]
+    let permutations (xs: List<'A>): seq<List<'A>> =
+        let rec permute: List<'A> -> seq<List<'A>> =
+            function
+            | [] -> seq [ List.empty ]
+            | x :: xs -> Seq.collect (insert x) (permute xs)
+
+        and insert (x: 'A): List<'A> -> List<List<'A>> =
+            function
+            | [] -> [ [ x ] ]
+            | (y :: ys) as xs ->
+                (x :: xs)
+                :: (List.map (fun x -> y :: x) (insert x ys))
+
+        permute xs
 
 [<RequireQualifiedAccess>]
 module Set =
@@ -395,10 +399,10 @@ module Map =
         |> Seq.map (fun (KeyValue (k, v)) -> (f k, g v))
         |> Map
 
-    /// Exponential of sets, i.e. set of functions X -> Y.
-    let exp (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
+    /// Exponential of sets, i.e. sequence (not a set for performance) of functions X -> Y.
+    let exp (X: Set<'A>) (Y: Set<'B>): seq<Map<'A, 'B>> =
         if X = Set.empty then
-            set [ Map.empty ]
+            Seq.singleton Map.empty
         else
             let xs = Set.toList X
             let ys = Set.toList Y
@@ -406,16 +410,14 @@ module Map =
             ys
             |> List.replicate (Set.count X)
             |> List.listProduct
-            |> List.map (List.zip xs >> Map)
-            |> set
+            |> Seq.map (List.zip xs >> Map)
 
-    /// Set of bijections X -> Y.
-    let iso (X: Set<'A>) (Y: Set<'B>): Set<Map<'A, 'B>> =
+    /// Sequence (not a set for performance) of bijections X -> Y.
+    let iso (X: Set<'A>) (Y: Set<'B>): seq<Map<'A, 'B>> =
         if Set.count X <> Set.count Y then
-            set []
+            Seq.empty
         else
             Y
             |> Set.toList
             |> List.permutations
-            |> List.map (List.zip (X |> Set.toList) >> Map)
-            |> Set
+            |> Seq.map (List.zip (X |> Set.toList) >> Map)

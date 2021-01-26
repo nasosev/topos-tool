@@ -8,11 +8,11 @@ let isTopology (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool =
 
     let (&&&) = Truth.internalAnd j.Category
 
-    let cond1 j = Morphism.compose j t = t
-    let cond2 j = Morphism.compose j j = j
+    let cond1 j = j @ t = t
+    let cond2 j = j @ j = j
 
     let cond3 j =
-        Morphism.compose j (&&&) = Morphism.compose (&&&) (Morphism.product j j)
+        j @ (&&&) = (&&&) @ (Morphism.product j j)
 
     cond1 j && cond2 j && cond3 j
 
@@ -26,9 +26,7 @@ let topologies (cat: Category<'A>): Set<Morphism<'A, Heart<'A>, Heart<'A>>> =
 let closure (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (U: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
     let chiS = U |> Truth.subobjectToChar alg.Top
 
-    (j, chiS)
-    ||> Morphism.compose
-    |> Truth.charToSubobject
+    j @ chiS |> Truth.charToSubobject
 
 /// Checks if a subobject is dense relative to a topology.
 let isDense (alg: Algebra<'A, 'S>) (j: Morphism<'A, Heart<'A>, Heart<'A>>) (U: Presheaf<'A, 'S>): bool =

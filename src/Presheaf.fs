@@ -193,7 +193,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
     let ar =
         Map [ for a in F.Category.Arrows do
                   let x =
-                      Map [ for f in Morphism.hom (product (yo.Object a.Cod) F) G do
+                      Map [ for f in ob.[a.Cod] do
                                 let g =
                                     Morphism.compose f (Morphism.product (yo.Arrow a) (Morphism.id F))
 
@@ -205,14 +205,6 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
       Ob = ob
       Ar = ar
       Category = F.Category }
-
-/// Determines if two presheaves are isomorphic.
-let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
-    [ for A in F.Category.Objects do
-        [ for x in Map.iso F.Ob.[A] G.Ob.[A] do
-            (A, x) ] ]
-    |> List.listProduct
-    |> List.exists (Map >> Morphism.isMorphism F G)
 
 /// Renames the input presheaf with a name of an identical element in the simplification set.
 let identify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
@@ -227,16 +219,13 @@ let identify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presh
 let rename (name: Name) (F: Presheaf<'A, 'S>): Presheaf<'A, 'S> = { F with Name = name }
 
 /// Given a presheaf of type `F` returns an isomorphic presheaf whose figures are of type `int` numbered 0..[size - 1].
-let simplify (nameString: string) (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
-    let name = Name.ofString nameString
-
+let simplify (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
     let figureToInt X s = List.findIndex ((=) s) (Set.toList X)
 
     let ob =
         Map [ for A in F.Category.Objects do
                   let X =
-                      F.Ob.[A]
-                      |> Set.map (fun s -> s |> figureToInt F.Ob.[A])
+                      F.Ob.[A] |> Set.map (figureToInt F.Ob.[A])
 
                   (A, X) ]
 
@@ -249,7 +238,18 @@ let simplify (nameString: string) (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
 
                   (a, x) ]
 
-    { Name = name
+    { Name = F.Name
       Ob = ob
       Ar = ar
       Category = F.Category }
+
+/// Determines if two presheaves are isomorphic.
+let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
+    let F = simplify F // Simplifying improves performance.
+    let G = simplify G //
+
+    [ for A in F.Category.Objects do
+        [ for x in Map.iso F.Ob.[A] G.Ob.[A] do
+            (A, x) ] ]
+    |> List.listProduct
+    |> Seq.exists (Map >> Morphism.isMorphism F G)

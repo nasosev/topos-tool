@@ -240,7 +240,7 @@ module Random =
     // Generates a pullback of coproducts of representables.
     let genPullback cat =
         let (gG, gH, gI) =
-            cat |> genRepCoproduct |> Gen.three |> Gen.unzip3
+            cat |> genRepresentable |> Gen.three |> Gen.unzip3
 
         let I = gI |> sample
 
@@ -264,7 +264,7 @@ module Random =
     // Generates a pushout of coproducts representables.
     let genPushout cat =
         let (gG, gH, gI) =
-            cat |> genRepCoproduct |> Gen.three |> Gen.unzip3
+            cat |> genRepresentable |> Gen.three |> Gen.unzip3
 
         let I = gI |> sample
 
@@ -312,7 +312,7 @@ module Random =
     /// Samples a random a morphism between.
     let randomHom cat =
         cat
-        |> genPushout
+        |> genSmallPushout
         |> fun (G, _, _) -> G
         |> Gen.two
         |> Gen.unzip
@@ -324,14 +324,27 @@ module Random =
         genPushout cat
         |> fun (G, _, _) -> G |> sample |> Presheaf.simplify
 
-    /// Samples a random presheaf.
+    /// Samples a random small presheaf.
     let randomSmallPresheaf cat =
         genSmallPushout cat
         |> fun (G, _, _) -> G |> sample |> Presheaf.simplify
 
-    // Category tests
+    /// Samples a random sum of representables.
+    let randomSumPresheaf cat =
+        genRepCoproduct cat |> sample |> Presheaf.simplify
 
-    let ``yoneda lemma`` cat =
+    /// Samples a random representable.
+    let randomRepPresheaf cat =
+        genRepresentable cat
+        |> sample
+        |> Presheaf.simplify
+
+    // Category tests: in the tests below random presheaves of various sizes are used to verify identities and facts.
+    // The sizes were chosen so that the tests run in a reasonable amount of time.
+
+    // CAUTION: Make sure tests take a unit parameter or else they will secretly only run once!.
+
+    let ``yoneda lemma`` cat () =
         let F = randomPresheaf cat
         let A = cat.Objects |> Gen.elements |> sample
         let yo = Yoneda.yo cat
@@ -346,35 +359,30 @@ module Random =
         let cod = F.Ob.[A]
         Map.isBijective cod map // Todo: also check naturality.
 
-    let ``F + 0 ~= F`` cat =
+    let ``F + 0 ~= F`` cat () =
         let O = Presheaf.zero cat
-        let F = randomPresheaf cat
+        let F = randomSmallPresheaf cat
         F + O == F
 
-    let ``F * 0 ~= 0`` cat =
+    let ``F * 0 ~= 0`` cat () =
         let O = Presheaf.zero cat
-        let F = randomPresheaf cat
+        let F = randomSmallPresheaf cat
         F * O == O
 
-    let ``F * 1 ~= 1`` cat =
+    let ``F * 1 ~= 1`` cat () =
         let I = Presheaf.one cat
-        let F = randomPresheaf cat
+        let F = randomSmallPresheaf cat
         F * I == F
 
-    let ``F + G ~= G + F`` cat =
-        let F = randomSmallPresheaf cat // Small.
-        let G = randomSmallPresheaf cat //
+    let ``F + G ~= G + F`` cat () =
+        let F = randomRepPresheaf cat
+        let G = randomRepPresheaf cat
         F + G == G + F
 
-    let ``F * G ~= G * F`` cat =
-        let F = randomSmallPresheaf cat // Small.
-        let G = randomSmallPresheaf cat //
-        F * G == G * F
-
-    let ``hom<F * G, H> ~= hom <F, G => H>`` cat =
-        let F = randomSmallPresheaf cat // Small.
-        let G = randomSmallPresheaf cat //
-        let H = randomSmallPresheaf cat //
+    let ``hom<F * G, H> ~= hom <F, G => H>`` cat () =
+        let F = randomRepPresheaf cat
+        let G = randomRepPresheaf cat
+        let H = randomRepPresheaf cat
 
         let expGH = H ^ G
         let homLHS = Morphism.hom (F * G) H
@@ -392,13 +400,20 @@ module Random =
 
         Map.isBijective homLHS map // Todo: also check naturality.
 
-    let ``# sub F = # hom <F, Omega>`` cat = // Todo: check the natural isomorphism.
-        let F = randomPresheaf cat
+    let ``sub F ~= hom <F, Omega>`` cat () =
+        let F = randomSmallPresheaf cat
         let subF = Subobject.subobjects F
-        let Om = Truth.omega cat
-        Set.count (Morphism.hom F Om) = Set.count subF
+        let hom = (F, Truth.omega cat) ||> Morphism.hom
 
-    let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
+        let map =
+            Map [ for U in subF do
+                      let f = U |> Truth.subobjectToChar F
+
+                      (U, f) ]
+
+        Map.isBijective hom map // Todo: also check naturality.
+
+    let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat () =
         let F = randomSmallPresheaf cat // Small.
         let alg = Subobject.algebra F
         let (+) = Subobject.join
@@ -407,7 +422,7 @@ module Random =
         let eq (U, V) = d (U * V) = (d U * V) + (U * d V)
         alg.Subobjects |> Set.square |> Set.forall eq
 
-    let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
+    let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat () =
         let F = randomSmallPresheaf cat // Small.
         let alg = Subobject.algebra F
         let (+) = Subobject.join
@@ -416,7 +431,7 @@ module Random =
         let eq (U, V) = d (U + V) + d (U * V) = d U + d V
         alg.Subobjects |> Set.square |> Set.forall eq
 
-    let ``necessity <= identity <= possibility`` cat =
+    let ``necessity <= identity <= possibility`` cat () =
         let F = randomSmallPresheaf cat // Small.
         let alg = Subobject.algebra F
 
@@ -429,7 +444,7 @@ module Random =
 
         alg.Subobjects |> Set.forall eq
 
-    let ``possibility-necessity adjunction`` cat =
+    let ``possibility-necessity adjunction`` cat () =
         let F = randomSmallPresheaf cat // Small.
         let alg = Subobject.algebra F
 
@@ -442,7 +457,7 @@ module Random =
 
         alg.Subobjects |> Set.square |> Set.forall eq
 
-    let ``omega-axiom isomorphism`` cat =
+    let ``omega-axiom isomorphism`` cat () =
         let F = randomSmallPresheaf cat // Small.
         let alg = Subobject.algebra F
         let chi = Truth.subobjectToChar alg.Top
@@ -454,7 +469,7 @@ module Random =
         && (Morphism.hom alg.Top Om
             |> Set.forall (fun n -> n |> psi |> chi = n))
 
-    let ``exists-preimage-forall adjunction`` cat =
+    let ``exists-preimage-forall adjunction`` cat () =
         let f = randomHom cat
         let pre = Subobject.preimage f
         let ex = Subobject.exists f
@@ -476,7 +491,7 @@ module Random =
         ||> Set.product
         |> Set.forall (fun UV -> adjunction1 UV && adjunction2 UV)
 
-    let ``frobenius identity`` cat =
+    let ``frobenius identity`` cat () =
         let f = randomHom cat
         let (.*) = Subobject.meet
         let pre = Subobject.preimage f
@@ -490,7 +505,7 @@ module Random =
 
         (subG, subH) ||> Set.product |> Set.forall eq
 
-    let ``beck-chevalley condition`` cat =
+    let ``beck-chevalley condition`` cat () =
         let (P, f, g) =
             genPullback cat
             |> fun (a, b, c) -> (sample a, sample b, sample c)
@@ -519,7 +534,7 @@ module Random =
         Map.compose pre_g ex_f = Map.compose ex_g' pre_f'
         && Map.compose pre_f fa_g = Map.compose fa_f' pre_g'
 
-    let ``double negation morphism is topology`` cat =
+    let ``double negation morphism is topology`` cat () =
         let neg = Truth.internalNot cat
 
         neg @ neg |> Topology.isTopology
@@ -534,11 +549,10 @@ module Random =
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -570,11 +584,9 @@ module Random =
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
-
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -606,11 +618,10 @@ module Random =
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -642,11 +653,10 @@ module Random =
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -678,11 +688,10 @@ module Random =
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -705,20 +714,89 @@ module Random =
             static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
-    module TruncESets =
-        open Examples.TruncESets
+    module SquareLattice =
+        open Examples.SquareLattice
 
-        type TruncESets =
+        type SquareLattice =
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
-            static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
-            static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
+
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
+            static member ``necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
+
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
+                ``double negation morphism is topology`` cat
+
+    module CyclicGroup3 =
+        open Examples.SquareLattice
+
+        type CyclicGroup3 =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
+
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
+
+            static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
+                ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
+
+            static member ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` =
+                ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat
+
+            static member ``necessity <= identity <= possibility`` =
+                ``necessity <= identity <= possibility`` cat
+
+            static member ``possibility-necessity adjunction`` = ``possibility-necessity adjunction`` cat
+            static member ``omega-axiom isomorphism`` = ``omega-axiom isomorphism`` cat
+
+            static member ``exists-preimage-forall adjunction`` =
+                ``exists-preimage-forall adjunction`` cat
+
+            static member ``frobenius identity`` = ``frobenius identity`` cat
+            static member ``beck-chevalley condition`` = ``beck-chevalley condition`` cat
+
+            static member ``double negation morphism is topology`` =
+                ``double negation morphism is topology`` cat
+
+    module MonoidTrans2 =
+        open Examples.MonoidTrans2
+
+        type MonoidTrans2 =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
+            static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
+            static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
+            static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
+            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
+
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
+
+            static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
 
             static member ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` =
                 ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat
@@ -749,10 +827,12 @@ let deterministic () =
     Check.All<Deterministic.RGraphs.RGraphs>(config)
 
 let random () =
-    let config = { Config.Default with MaxTest = 10 }
+    let config = { Config.Default with MaxTest = 50 }
     Check.All<Random.Sets.Sets>(config)
     Check.All<Random.Bisets.Bisets>(config)
     Check.All<Random.Bouquets.Bouquets>(config)
     Check.All<Random.Graphs.Graphs>(config)
-//Check.All<Random.RGraphs.RGraphs>(config) // todo: These examples are currently too complex to test.
-//Check.All<Random.TruncESets.TruncESets>(config) //
+    Check.All<Random.RGraphs.RGraphs>(config)
+    Check.All<Random.SquareLattice.SquareLattice>(config)
+    Check.All<Random.CyclicGroup3.CyclicGroup3>(config)
+    Check.All<Random.MonoidTrans2.MonoidTrans2>(config)

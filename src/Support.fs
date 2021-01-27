@@ -246,6 +246,16 @@ module Relation =
         && isReflexivelyClosed rel
         && isSymmetricallyClosed rel
 
+    /// Gives the equivalence closure of a relation.
+    let equivalenceClosure (rel: Relation<'A, 'A>): Relation<'A, 'A> =
+        let apply (rel: Relation<'A, 'A>) =
+            rel |> transitiveClosure |> symmetricClosure
+
+        let rec close (rel: Relation<'A, 'A>): Relation<'A, 'A> =
+            if apply rel = rel then rel else rel |> apply |> close
+
+        rel |> reflexiveClosure |> close
+
     /// Creates the Hasse diagram of a poset.
     let hasseFromPoset (P: Relation<'A, 'A>): Set<'A * 'A> =
         P
@@ -279,7 +289,10 @@ module Map =
     let constant (X: Set<'A>) (t: 'B): Map<'A, 'B> = X |> Set.map (fun s -> (s, t)) |> Map
 
     /// Composes maps.
-    let compose (x: Map<'B, 'C>) (y: Map<'A, 'B>): Map<'A, 'C> = y |> Map.map (fun _ t -> x.[t])
+    let compose (x: Map<'B, 'C>) (y: Map<'A, 'B>): Map<'A, 'C> =
+        if x = Map.empty then Map.empty
+        else if y = Map.empty then Map.empty
+        else y |> Map.map (fun _ t -> x.[t])
 
     /// Gives the domain of a map.
     let dom (x: Map<'A, 'B>): Set<'A> =
@@ -356,9 +369,7 @@ module Map =
                 (x', y') ]
             |> set
             |> Relation.ofPairs X X
-            |> Relation.transitiveClosure
-            |> Relation.symmetricClosure
-            |> Relation.reflexiveClosure
+            |> Relation.equivalenceClosure
 
         X |> Set.partitionByEquivalence equal
 
@@ -373,9 +384,7 @@ module Map =
                 (x', y') ]
             |> set
             |> Relation.ofPairs XY XY
-            |> Relation.transitiveClosure
-            |> Relation.symmetricClosure
-            |> Relation.reflexiveClosure
+            |> Relation.equivalenceClosure
 
         XY |> Set.partitionByEquivalence equal
 

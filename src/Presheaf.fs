@@ -7,7 +7,9 @@ let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Ma
     cat.NonidArrows
     |> Set.forall (fun a ->
         ob.[a.Cod]
-        |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom]))
+        |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom])) // Check maps are well defined.
+    && cat.Compose
+       |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf]) // Check functoriality.
 
 /// Helper to create a presheaf from supplied category, object map and nontrivial arrow map.
 let make (nameString: string)
@@ -15,7 +17,7 @@ let make (nameString: string)
          (ob: Map<'A, Set<'S>>)
          (nonidArrows: Map<Arrow<'A>, Map<'S, 'S>>)
          : Presheaf<'A, 'S> =
-    if not (isPresheaf cat ob nonidArrows) then failwith Error.makePresheaf
+
     let name = Name.ofString nameString
 
     let ar =
@@ -25,6 +27,8 @@ let make (nameString: string)
                       (cat.Id.[A], x) ]
 
         Map.union idArrow nonidArrows
+
+    if not (isPresheaf cat ob ar) then failwith Error.makePresheaf
 
     { Name = name
       Ob = ob

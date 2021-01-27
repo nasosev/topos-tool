@@ -1,7 +1,8 @@
-﻿/// Definitions of simple presheaf topoi from the book of Reyes et al.
+﻿/// Definitions of simple basis categories. The given name is usually the one of the presheaf topos on it.
 [<RequireQualifiedAccess>]
 module Examples
 
+/// The terminal category 1: a single object and no nontrivial arrows.
 module Sets =
     type Sets = Sets of string
     let P = Sets "P"
@@ -15,6 +16,7 @@ module Sets =
     let yo = Yoneda.yo cat
     let hP = yo.Object P
 
+/// Two copies of the terminal category: 1 + 1.
 module Bisets =
     type Bisets = Bisets of string
     let P, S = Bisets "P", Bisets "S"
@@ -28,6 +30,7 @@ module Bisets =
     let yo = Yoneda.yo cat
     let hP, hS = yo.Object P, yo.Object S
 
+/// A category with two objects and one arrow between them.
 module Bouquets =
     type Bouquets = Bouquets of string
     let V, L = Bouquets "V", Bouquets "L"
@@ -42,6 +45,7 @@ module Bouquets =
     let yo = Yoneda.yo cat
     let hV, hL = yo.Object V, yo.Object L
 
+/// A category with two objects and two arrows from one to the other.
 module Graphs =
     type Graphs = Graphs of string
     let V, E = Graphs "V", Graphs "E"
@@ -56,6 +60,7 @@ module Graphs =
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
 
+/// Same as Graphs but with a new arrow going the other direction. Note the compose relation.
 module RGraphs =
     type RGraphs = RGraphs of string
     let V, E = RGraphs "V", RGraphs "E"
@@ -86,26 +91,57 @@ module RGraphs =
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
 
-module TruncESets =
-    type TruncESets = TruncESets of string
-    let V = TruncESets "V"
-    let objects = set [ V ]
-
-    let s, s2, s3, s4 =
-        Arrow.make "s" V V, Arrow.make "s2" V V, Arrow.make "s3" V V, Arrow.make "s4" V V
-
-    let arrows = set [ s; s2; s3; s4 ]
-
-    let compose =
-        Map [ (s, s), s2
-              (s, s2), s3
-              (s2, s), s3
-              (s2, s2), s4
-              (s3, s), s4
-              (s, s3), s4 ]
+/// A square lattice as a category.
+module SquareLattice =
+    type SquareLattice = SquareLattice of string
 
     let cat =
-        Category.make "TruncESets" objects arrows compose
+        set [ 0 .. 1 ]
+        |> Set.powerset
+        |> Relation.posetFromFun Set.isSubset
+        |> Category.ofPoset "SquareLattice"
+
+/// The cyclic group Z_3 as a single-object category.
+module CyclicGroup3 =
+    type CyclicGroup3 = CyclicGroup3 of string
+    let G = CyclicGroup3 "G"
+    let objects = set [ G ]
+
+    let a, b = Arrow.make "a" G G, Arrow.make "b" G G
+
+    let arrows = set [ a; b ]
+
+    let compose = Map [ (a, a), b; (b, b), a ]
+
+    let cat =
+        Category.make "CyclicGroup3" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hV = yo.Object V
+    let hG = yo.Object G
+
+/// The full transformation monoid on a set of size two as a single-object category.
+module MonoidTrans2 =
+    type MonoidTrans2 = MonoidTrans2 of string
+    let M = MonoidTrans2 "M"
+    let objects = set [ M ]
+
+    let z, n, o =
+        Arrow.make "z" M M, Arrow.make "n" M M, Arrow.make "o" M M
+
+    let arrows = set [ z; n; o ]
+
+    let compose =
+        Map [ (z, z), z
+              (z, o), z
+              (z, n), z
+              (o, z), o
+              (o, o), o
+              (o, n), o
+              (n, o), z
+              (n, z), o ]
+
+    let cat =
+        Category.make "MonoidT2" objects arrows compose
+
+    let yo = Yoneda.yo cat
+    let hM = yo.Object M

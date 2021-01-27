@@ -19,7 +19,7 @@ let ofGeneric (o: _): string =
     let str = $"%0A{o}" // Sets print width to zero.
 
     str
-    |> regexReplace "[A-Za-z]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
+    |> regexReplace "[A-Za-z0-9]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
     |> regexReplaceRec (regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // Converts coproducts.
     |> replace @"set []" @"{\emptyset} "
     |> replace @"set " @" "

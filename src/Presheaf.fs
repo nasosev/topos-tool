@@ -7,7 +7,7 @@ let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Ma
     cat.NonidArrows
     |> Set.forall (fun a ->
         ob.[a.Cod]
-        |> Set.forall (fun x -> Set.contains ar.[a].[x] ob.[a.Dom]))
+        |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom]))
 
 /// Helper to create a presheaf from supplied category, object map and nontrivial arrow map.
 let make (nameString: string)
@@ -252,4 +252,4 @@ let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
         [ for x in Map.iso F.Ob.[A] G.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
-    |> Seq.exists (Map >> Morphism.isMorphism F G)
+    |> Seq.exists (Map >> Morphism.isNatural F G)

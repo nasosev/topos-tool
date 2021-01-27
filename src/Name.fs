@@ -13,6 +13,7 @@ let ofString (s: string): Name = { String = s }
 let ofInt (i: int): Name = { String = $"{i}" }
 let name a: Name = { String = $"{a}" }
 let id (A: 'A): Name = { String = $"1_{{%A{A}}}" }
+let eval (name: Name): Name = { String = $"e_{{{name.String}}}" }
 let char (name: Name): Name = { String = @$"\chi_{{{name.String}}}" }
 let categoryOfElements (name: Name): Name = { String = @$"\int {name.String}" }
 let negate (name: Name): Name = { String = $"-{name.String}" }

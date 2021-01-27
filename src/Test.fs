@@ -331,6 +331,21 @@ module Random =
 
     // Category tests
 
+    let ``yoneda lemma`` cat =
+        let F = randomPresheaf cat
+        let A = cat.Objects |> Gen.elements |> sample
+        let yo = Yoneda.yo cat
+        let hA = yo.Object A
+
+        let hom = Morphism.hom hA F
+
+        let map =
+            Map [ for f in hom do
+                      (f, f.Mapping.[A].[cat.Id.[A]]) ]
+
+        let cod = F.Ob.[A]
+        Map.isBijective cod map // Todo: also check naturality.
+
     let ``F + 0 ~= F`` cat =
         let O = Presheaf.zero cat
         let F = randomPresheaf cat
@@ -356,13 +371,28 @@ module Random =
         let G = randomSmallPresheaf cat //
         F * G == G * F
 
-    let ``# hom<F * G, H> = # hom <F, G => H>`` cat = // Note we only compare cardinalities.
+    let ``hom<F * G, H> ~= hom <F, G => H>`` cat =
         let F = randomSmallPresheaf cat // Small.
         let G = randomSmallPresheaf cat //
         let H = randomSmallPresheaf cat //
-        Set.count (Morphism.hom (F * G) H) = Set.count (Morphism.hom F (H ^ G))
 
-    let ``# sub F = # hom <F, Omega>`` cat = // Note we only compare cardinalities.
+        let expGH = H ^ G
+        let homLHS = Morphism.hom (F * G) H
+        let homRHS = Morphism.hom F expGH
+
+        let map =
+            Map [ for f in homRHS do
+                      let im =
+                          let i = Morphism.id G
+                          let t = Morphism.product f i
+                          let e = Morphism.eval expGH G H
+                          e @ t
+
+                      (f, im) ]
+
+        Map.isBijective homLHS map // Todo: also check naturality.
+
+    let ``# sub F = # hom <F, Omega>`` cat = // Todo: check the natural isomorphism.
         let F = randomPresheaf cat
         let subF = Subobject.subobjects F
         let Om = Truth.omega cat
@@ -370,7 +400,7 @@ module Random =
 
     let ``d(x /\ y) = (dx /\ y) \/ (x /\ dy)`` cat =
         let F = randomSmallPresheaf cat // Small.
-        let alg = (Subobject.algebra F)
+        let alg = Subobject.algebra F
         let (+) = Subobject.join
         let (*) = Subobject.meet
         let d = Subobject.boundary alg
@@ -379,7 +409,7 @@ module Random =
 
     let ``d(x \/ y) \/ d(x /\ y) = dx \/ dy`` cat =
         let F = randomSmallPresheaf cat // Small.
-        let alg = (Subobject.algebra F)
+        let alg = Subobject.algebra F
         let (+) = Subobject.join
         let (*) = Subobject.meet
         let d = Subobject.boundary alg
@@ -388,7 +418,7 @@ module Random =
 
     let ``necessity <= identity <= possibility`` cat =
         let F = randomSmallPresheaf cat // Small.
-        let alg = (Subobject.algebra F)
+        let alg = Subobject.algebra F
 
         let square = Subobject.necessity alg
         let diamond = Subobject.possibility alg
@@ -401,7 +431,7 @@ module Random =
 
     let ``possibility-necessity adjunction`` cat =
         let F = randomSmallPresheaf cat // Small.
-        let alg = (Subobject.algebra F)
+        let alg = Subobject.algebra F
 
         let square = Subobject.necessity alg
         let diamond = Subobject.possibility alg
@@ -414,7 +444,7 @@ module Random =
 
     let ``omega-axiom isomorphism`` cat =
         let F = randomSmallPresheaf cat // Small.
-        let alg = (Subobject.algebra F)
+        let alg = Subobject.algebra F
         let chi = Truth.subobjectToChar alg.Top
         let psi = Truth.charToSubobject
         let Om = Truth.omega cat
@@ -426,7 +456,7 @@ module Random =
 
     let ``exists-preimage-forall adjunction`` cat =
         let f = randomHom cat
-        let pi = Subobject.preimage f
+        let pre = Subobject.preimage f
         let ex = Subobject.exists f
         let fa = Subobject.forall f
         let algF = Subobject.algebra f.Dom
@@ -436,11 +466,11 @@ module Random =
 
         let adjunction1 (U, V) =
             algG.LessEq.[ex.[U], V]
-            <=> algF.LessEq.[U, pi.[V]]
+            <=> algF.LessEq.[U, pre.[V]]
 
         let adjunction2 (U, V) =
             algG.LessEq.[V, fa.[U]]
-            <=> algF.LessEq.[pi.[V], U]
+            <=> algF.LessEq.[pre.[V], U]
 
         (subG, subH)
         ||> Set.product
@@ -449,14 +479,14 @@ module Random =
     let ``frobenius identity`` cat =
         let f = randomHom cat
         let (.*) = Subobject.meet
-        let pi = Subobject.preimage f
+        let pre = Subobject.preimage f
         let ex = Subobject.exists f
         let algF = Subobject.algebra f.Dom
         let algG = Subobject.algebra f.Cod
         let subG = algF.Subobjects
         let subH = algG.Subobjects
 
-        let eq (U, V) = ex.[pi.[V] .* U] = V .* ex.[U]
+        let eq (U, V) = ex.[pre.[V] .* U] = V .* ex.[U]
 
         (subG, subH) ||> Set.product |> Set.forall eq
 
@@ -499,14 +529,14 @@ module Random =
         open Examples.Sets
 
         type Sets =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
@@ -535,14 +565,14 @@ module Random =
         open Examples.Bisets
 
         type Bisets =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
@@ -571,14 +601,14 @@ module Random =
         open Examples.Bouquets
 
         type Bouquets =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
@@ -607,14 +637,14 @@ module Random =
         open Examples.Graphs
 
         type Graphs =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
@@ -643,14 +673,14 @@ module Random =
         open Examples.RGraphs
 
         type RGraphs =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 
@@ -679,14 +709,14 @@ module Random =
         open Examples.TruncESets
 
         type TruncESets =
+            static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
             static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``F * G ~= G * F`` = ``F * G ~= G * F`` cat
 
-            static member ``# hom<F * G, H> = # hom <F, G => H>`` =
-                ``# hom<F * G, H> = # hom <F, G => H>`` cat
+            static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``# sub F = # hom <F, Omega>`` = ``# sub F = # hom <F, Omega>`` cat
 

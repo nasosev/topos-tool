@@ -119,7 +119,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         |> Set.map (fun (((a, a'), a''), ((b, b'), b'')) ->
             ((productAr (a, b), productAr (a', b')), productAr (a'', b'')))
         |> Map
-        |> filterNonid // todo: it would be more efficient to filter first.
+        |> filterNonid // Todo: it would be more efficient to filter first.
 
     make name.String objects nonidArrows compose
 
@@ -212,7 +212,7 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     make name.String objects nonidArrows compose
 
 /// Creates a category from a poset.
-let ofPoset (nameStr: string) (lessEq: Relation<'A, 'A>): Category<'A> =
+let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
     let X = Relation.dom lessEq
 
     let singletonArrow (A: 'A, B: 'A): Arrow<'A> =
@@ -231,6 +231,4 @@ let ofPoset (nameStr: string) (lessEq: Relation<'A, 'A>): Category<'A> =
                       let ba = singletonArrow (b.Dom, a.Cod)
                       ((a, b), ba) ]
 
-    make nameStr X nonidArrows nontrivCompose
-
-// todo: Comma category, slice categories.
+    make nameString X nonidArrows nontrivCompose

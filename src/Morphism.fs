@@ -310,9 +310,28 @@ let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Ch
       Category = dom.Category }
 
 /// Evaluation map of the exponential.
-// todo
-let eval (exp: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>) (arg: Presheaf<'A, Arrow<'S>>): Presheaf<'A, 'T> =
-    failwith Error.todo
+let eval (expFG: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>)
+         (F: Presheaf<'A, 'S>)
+         (G: Presheaf<'A, 'T>)
+         : Morphism<'A, (Morphism<'A, (Arrow<'A> * 'S), 'T> * 'S), 'T> =
+    let name = Name.eval expFG.Name
+    let dom = presheafProduct expFG F
+
+    let mapping =
+        Map [ for A in F.Category.Objects do
+                  let x =
+                      Map [ for (f, s) in dom.Ob.[A] do
+                                ((f, s), f.Mapping.[A].[F.Category.Id.[A], s]) ]
+
+                  (A, x)
+
+               ]
+
+    { Name = name
+      Mapping = mapping
+      Dom = dom
+      Cod = G
+      Category = F.Category }
 
 /// Terminal presheaf here because it is relied on by Morphism.one.
 let internal presheafOne (cat: Category<'A>): Presheaf<'A, unit> =

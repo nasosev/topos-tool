@@ -248,13 +248,10 @@ module Relation =
 
     /// Gives the equivalence closure of a relation.
     let equivalenceClosure (rel: Relation<'A, 'A>): Relation<'A, 'A> =
-        let apply (rel: Relation<'A, 'A>) =
-            rel |> transitiveClosure |> symmetricClosure
-
-        let rec close (rel: Relation<'A, 'A>): Relation<'A, 'A> =
-            if apply rel = rel then rel else rel |> apply |> close
-
-        rel |> reflexiveClosure |> close
+        rel
+        |> symmetricClosure
+        |> transitiveClosure
+        |> reflexiveClosure
 
     /// Creates the Hasse diagram of a poset.
     let hasseFromPoset (P: Relation<'A, 'A>): Set<'A * 'A> =

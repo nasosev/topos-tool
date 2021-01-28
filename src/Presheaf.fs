@@ -2,14 +2,21 @@
 [<RequireQualifiedAccess>]
 module Presheaf
 
-/// Determines if the object-indexed sets and arrow-indexed set of maps determines a presheaf.
-let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
+/// Determines if the object-indexed sets and arrow-indexed set of maps are well-defined
+let isWellDefined (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
     cat.NonidArrows
     |> Set.forall (fun a ->
         ob.[a.Cod]
-        |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom])) // Check maps are well defined.
-    && cat.Compose
-       |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf]) // Check functoriality.
+        |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom]))
+
+/// Determines if the object-indexed sets and arrow-indexed set of maps are functorial.
+let isFunctorial (cat: Category<'A>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
+    cat.Compose
+    |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf])
+
+/// Determines if the object-indexed sets and arrow-indexed set of maps determines a presheaf.
+let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
+    isWellDefined cat ob ar && isFunctorial cat ar
 
 /// Helper to create a presheaf from supplied category, object map and nontrivial arrow map.
 let make (nameString: string)

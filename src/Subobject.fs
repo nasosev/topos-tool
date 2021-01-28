@@ -3,6 +3,7 @@
 module Subobject
 
 /// Subobject functor.
+// Todo: resolve genericity problems with this definition.
 let sub (_cat: Category<'A>)
         : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), Morphism<'A, 'S, 'T> -> Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>>> =
     let name = Name.subobject
@@ -25,7 +26,7 @@ let sub (_cat: Category<'A>)
                 ob,
                 Map [ for a in F.Category.Arrows do
                           (a, Map.restrict ob.[a.Cod] F.Ar.[a]) ])
-            |> Seq.filter (fun (ob, ar) -> Presheaf.isPresheaf F.Category ob ar)
+            |> Seq.filter (fun (ob, ar) -> Presheaf.isWellDefined F.Category ob ar)
             |> Seq.mapi (fun i (ob, ar) ->
                 let name = nameSubpresheaf i F ob ar
 

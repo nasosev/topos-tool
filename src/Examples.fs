@@ -61,9 +61,9 @@ module Graphs =
     let hV, hE = yo.Object V, yo.Object E
 
 /// Same as Graphs but with a new arrow going the other direction. Note the compose relation.
-module RGraphs =
-    type RGraphs = RGraphs of string
-    let V, E = RGraphs "V", RGraphs "E"
+module ReflexiveGraphs =
+    type ReflexiveGraphs = ReflexiveGraphs of string
+    let V, E = ReflexiveGraphs "V", ReflexiveGraphs "E"
     let objects = set [ V; E ]
 
     let s, t, l, u, v =
@@ -86,20 +86,20 @@ module RGraphs =
               (l, v), l ]
 
     let cat =
-        Category.make "RGraphs" objects arrows compose
+        Category.make "ReflexiveGraphs" objects arrows compose
 
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
 
 /// A square lattice as a category.
-module SquareLattice =
-    type SquareLattice = SquareLattice of string
+module DiamondLattice =
+    type DiamondLattice = DiamondLattice of string
 
     let cat =
         set [ 0 .. 1 ]
         |> Set.powerset
         |> Relation.posetFromFun Set.isSubset
-        |> Category.ofPoset "SquareLattice"
+        |> Category.ofPoset "DiamondLattice"
 
 /// The cyclic group Z_3 as a single-object category.
 module CyclicGroup3 =

@@ -4,6 +4,51 @@ module Test
 
 open FsCheck
 
+module Support =
+    type Support =
+        static member ``relational closures and reductions``(ps: Set<int * int>) =
+
+            let dom = ps |> Set.map fst |> set
+            let cod = ps |> Set.map snd |> set
+            let X = Set.union dom cod
+            let rel = Relation.ofPairs X X ps
+
+            let equivClose =
+                Relation.equivalenceClosure
+                >> Relation.isEquivalence
+
+            let symClose =
+                Relation.symmetricClosure
+                >> Relation.isSymmetricallyClosed
+
+            let transClose =
+                Relation.transitiveClosure
+                >> Relation.isTransitivelyClosed
+
+            let refClose =
+                Relation.reflexiveClosure
+                >> Relation.isReflexivelyClosed
+
+            let symReduce =
+                Relation.symmetricReduction
+                >> Relation.isSymmetricallyReduced
+
+            let transReduce =
+                Relation.transitiveReduction
+                >> Relation.isTransitivelyReduced
+
+            let refReduce =
+                Relation.reflexiveReduction
+                >> Relation.isReflexivelyReduced
+
+            equivClose rel
+            && symClose rel
+            && transClose rel
+            && refClose rel
+            && symReduce rel
+            && transReduce rel
+            && refReduce rel
+
 module Deterministic =
     module Bisets =
         open Examples.Bisets
@@ -140,7 +185,7 @@ module Deterministic =
                 F == Truth.omega cat
 
     module RGraphs =
-        open Examples.RGraphs
+        open Examples.ReflexiveGraphs
 
         type RGraphs =
 
@@ -679,10 +724,10 @@ module Random =
             static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
-    module RGraphs =
-        open Examples.RGraphs
+    module ReflexiveGraphs =
+        open Examples.ReflexiveGraphs
 
-        type RGraphs =
+        type ReflexiveGraphs =
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -714,10 +759,10 @@ module Random =
             static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
-    module SquareLattice =
-        open Examples.SquareLattice
+    module DiamondLattice =
+        open Examples.DiamondLattice
 
-        type SquareLattice =
+        type DiamondLattice =
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -750,7 +795,7 @@ module Random =
                 ``double negation morphism is topology`` cat
 
     module CyclicGroup3 =
-        open Examples.SquareLattice
+        open Examples.DiamondLattice
 
         type CyclicGroup3 =
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
@@ -819,6 +864,8 @@ module Random =
             static member ``double negation morphism is topology`` =
                 ``double negation morphism is topology`` cat
 
+let support () = Check.QuickAll<Support.Support>()
+
 let deterministic () =
     let config = { Config.Default with MaxTest = 1 }
     Check.All<Deterministic.Bisets.Bisets>(config)
@@ -832,7 +879,7 @@ let random () =
     Check.All<Random.Bisets.Bisets>(config)
     Check.All<Random.Bouquets.Bouquets>(config)
     Check.All<Random.Graphs.Graphs>(config)
-    Check.All<Random.RGraphs.RGraphs>(config)
-    Check.All<Random.SquareLattice.SquareLattice>(config)
+    Check.All<Random.ReflexiveGraphs.ReflexiveGraphs>(config)
+    Check.All<Random.DiamondLattice.DiamondLattice>(config)
     Check.All<Random.CyclicGroup3.CyclicGroup3>(config)
     Check.All<Random.MonoidTrans2.MonoidTrans2>(config)

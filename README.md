@@ -52,6 +52,7 @@ version: prerelease
 - general limits/colimits
 - geometric and logical morphisms
 - j-sheaves
+- mitchell-benabou language
 - ...
 
 

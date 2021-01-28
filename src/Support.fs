@@ -240,18 +240,29 @@ module Relation =
     /// Checks if a relation is symmetrically reduced.
     let isSymmetricallyReduced (rel: Relation<'A, 'A>): bool = symmetricReduction rel = rel
 
-    /// Checks if a relation is an equivalence.
-    let isEquivalence (rel: Relation<'A, 'A>): bool =
-        isTransitivelyClosed rel
-        && isReflexivelyClosed rel
-        && isSymmetricallyClosed rel
-
     /// Gives the equivalence closure of a relation.
     let equivalenceClosure (rel: Relation<'A, 'A>): Relation<'A, 'A> =
         rel
         |> symmetricClosure
         |> transitiveClosure
         |> reflexiveClosure
+
+    /// Checks if a relation is antisymmetric.
+    let isAntisymmetric (Relation x): bool =
+        x
+        |> Map.forall (fun (z, z') v -> if v && x.[z', z] then z = z' else true)
+
+    /// Checks if a relation is an equivalence.
+    let isEquivalence (rel: Relation<'A, 'A>): bool =
+        isReflexivelyClosed rel
+        && isSymmetricallyClosed rel
+        && isTransitivelyClosed rel
+
+    /// Checks if a relation is a partial order.
+    let isPartialOrder (rel: Relation<'A, 'A>): bool =
+        isReflexivelyClosed rel
+        && isAntisymmetric rel
+        && isTransitivelyClosed rel
 
     /// Creates the Hasse diagram of a poset.
     let hasseFromPoset (P: Relation<'A, 'A>): Set<'A * 'A> =
@@ -263,8 +274,11 @@ module Relation =
 
     /// Creates the poset of a Hasse diagram.
     let posetFromHasse (H: Set<'A * 'A>): Relation<'A, 'A> =
+        let X =
+            Set.union (Set.map fst H) (Set.map snd H)
+
         H
-        |> ofPairs (Set.map fst H) (Set.map fst H)
+        |> ofPairs X X
         |> reflexiveClosure
         |> transitiveClosure
 

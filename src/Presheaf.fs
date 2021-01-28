@@ -9,7 +9,7 @@ let isWellDefined (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>,
         ob.[a.Cod]
         |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom]))
 
-/// Determines if the object-indexed sets and arrow-indexed set of maps are functorial.
+/// Determines if the arrow-indexed set of maps is functorial.
 let isFunctorial (cat: Category<'A>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
     cat.Compose
     |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf])

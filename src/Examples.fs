@@ -91,15 +91,23 @@ module ReflexiveGraphs =
     let yo = Yoneda.yo cat
     let hV, hE = yo.Object V, yo.Object E
 
-/// A square lattice as a category.
+/// A diamond lattice as a category.
 module DiamondLattice =
     type DiamondLattice = DiamondLattice of string
 
+    let B, L, R, T =
+        DiamondLattice "B", DiamondLattice "L", DiamondLattice "R", DiamondLattice "T"
+
     let cat =
-        set [ 0 .. 1 ]
-        |> Set.powerset
-        |> Relation.posetFromFun Set.isSubset
+        [ (B, L); (B, R); (L, T); (R, T) ]
+        |> set
+        |> Relation.posetFromHasse
         |> Category.ofPoset "DiamondLattice"
+
+    let yo = Yoneda.yo cat
+
+    let hB, hL, hR, hT =
+        yo.Object B, yo.Object L, yo.Object R, yo.Object T
 
 /// The cyclic group Z_3 as a single-object category.
 module CyclicGroup3 =

@@ -19,6 +19,29 @@ module BooleanLogic =
     /// Equivalence.
     let (<=>) (p: bool) (q: bool): bool = (p && q) || ((not p) && (not q))
 
+/// Tuple extensions.
+[<AutoOpen>]
+module Tuple =
+
+    let first (a: 'A, _: 'B, _: 'C): 'A = a
+    let second (_: 'A, b: 'B, _: 'C): 'B = b
+    let third (_: 'A, _: 'B, c: 'C): 'C = c
+
+/// String extensions.
+[<RequireQualifiedAccess>]
+module String =
+
+    let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
+
+    let regexReplace (pattern: string) (replacement: string) (input: string): string =
+        System.Text.RegularExpressions.Regex.Replace(input, pattern, replacement)
+
+    let replaceRecursive replace input =
+        let rec recurse input =
+            if replace input = input then input else recurse (replace input)
+
+        recurse input
+
 [<RequireQualifiedAccess>]
 module List =
 
@@ -127,9 +150,9 @@ module Relation =
         |> set
 
     /// Maps over a relation.
-    let map (mapping: ('A * 'B -> bool -> bool)) (rel: Relation<'A, 'B>): Relation<'A, 'B> =
+    let map (map: ('A * 'B -> bool -> bool)) (rel: Relation<'A, 'B>): Relation<'A, 'B> =
         let (Relation table) = rel
-        Relation(Map.map mapping table)
+        Relation(Map.map map table)
 
     /// Filters a relation from a predicate.
     let filter (predicate: 'A * 'B -> bool -> bool) (rel: Relation<'A, 'B>): Relation<'A, 'B> =
@@ -284,8 +307,9 @@ module Relation =
 
     /// Creates a poset from a relation represented by a function and a set.
     let posetFromFun (f: 'A -> 'A -> bool) (X: Set<'A>): Relation<'A, 'A> =
-        ofList [ for (x, x') in Set.square X do
-                     ((x, x'), f x x') ]
+        ofList [ for x in X do
+                     for x' in X do
+                         ((x, x'), f x x') ]
 
 [<RequireQualifiedAccess>]
 module Map =
@@ -375,9 +399,10 @@ module Map =
         let Z = dom x // = dom y
 
         let equal =
-            [ for (r, r') in Set.square Z do
-                let x', y' = x.[r], y.[r']
-                (x', y') ]
+            [ for r in Z do
+                for r' in Z do
+                    let x', y' = x.[r], y.[r']
+                    (x', y') ]
             |> set
             |> Relation.ofPairs X X
             |> Relation.equivalenceClosure
@@ -390,9 +415,10 @@ module Map =
         let XY = Set.sum X Y
 
         let equal =
-            [ for (r, r') in Set.square Z do
-                let x', y' = Choice1Of2 x.[r], Choice2Of2 y.[r']
-                (x', y') ]
+            [ for r in Z do
+                for r' in Z do
+                    let x', y' = Choice1Of2 x.[r], Choice2Of2 y.[r']
+                    (x', y') ]
             |> set
             |> Relation.ofPairs XY XY
             |> Relation.equivalenceClosure

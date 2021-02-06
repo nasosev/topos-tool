@@ -1,4 +1,4 @@
-﻿/// Functions specific to the 'Presheaf' type.
+﻿/// Functions specific to the `Presheaf` type.
 [<RequireQualifiedAccess>]
 module Presheaf
 
@@ -40,7 +40,7 @@ let make (nameString: string)
     { Name = name
       Ob = ob
       Ar = ar
-      Category = cat }
+      Cat = cat }
 
 /// Initial presheaf.
 let zero (cat: Category<'A>): Presheaf<'A, 'S> =
@@ -55,7 +55,7 @@ let zero (cat: Category<'A>): Presheaf<'A, 'S> =
     { Name = Name.ofInt 0
       Ob = ob
       Ar = ar
-      Category = cat }
+      Cat = cat }
 
 /// Terminal presheaf.
 let one (cat: Category<'A>): Presheaf<'A, unit> = Morphism.presheafOne cat
@@ -76,21 +76,20 @@ let equaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A, 
     let name = Name.equaliser f.Name g.Name
 
     let ob =
-        Map [ for A in f.Category.Objects do
-                  let X =
-                      Map.equaliser f.Mapping.[A] g.Mapping.[A]
+        Map [ for A in f.Cat.Objects do
+                  let X = Map.equaliser f.Map.[A] g.Map.[A]
 
                   (A, X) ]
 
     let ar =
-        Map [ for a in f.Category.Arrows do
+        Map [ for a in f.Cat.Arrows do
                   let x = Map.restrict ob.[a.Cod] f.Dom.Ar.[a]
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = f.Category }
+      Cat = f.Cat }
 
 /// Pullback of presheaves, i.e. limit of the diagram
 /// F --f--> H <--g-- G
@@ -101,21 +100,21 @@ let pullback (f: Morphism<'A, 'S, 'U>) (g: Morphism<'A, 'T, 'U>): Presheaf<'A, '
         Name.pullback f.Dom.Name f.Cod.Name g.Dom.Name
 
     let ob =
-        Map [ for A in f.Category.Objects do
-                  let X = Map.pullback f.Mapping.[A] g.Mapping.[A]
+        Map [ for A in f.Cat.Objects do
+                  let X = Map.pullback f.Map.[A] g.Map.[A]
                   (A, X) ]
 
     let ar =
         let FG = product f.Dom g.Dom
 
-        Map [ for a in f.Category.Arrows do
+        Map [ for a in f.Cat.Arrows do
                   let x = Map.restrict ob.[a.Cod] FG.Ar.[a]
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = f.Category }
+      Cat = f.Cat }
 
 /// Coequaliser of presheaves, i.e. colimit of the diagram
 /// F --f--> G
@@ -127,14 +126,14 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
     let name = Name.coequaliser f.Name g.Name
 
     let ob =
-        Map [ for A in f.Category.Objects do
+        Map [ for A in f.Cat.Objects do
                   let X =
-                      Map.coequaliser f.Mapping.[A] g.Mapping.[A] f.Cod.Ob.[A]
+                      Map.coequaliser f.Map.[A] g.Map.[A] f.Cod.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        Map [ for a in f.Category.Arrows do
+        Map [ for a in f.Cat.Arrows do
                   let x =
                       Map [ for R in ob.[a.Cod] do
                                 let rep = R |> Seq.item 0 // R is inhabited.
@@ -150,7 +149,7 @@ let coequaliser (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'T>): Presheaf<'A
     { Name = name
       Ob = ob
       Ar = ar
-      Category = f.Category }
+      Cat = f.Cat }
 
 /// Pushout of presheaves, i.e. colimit of the diagram
 /// F <--f-- H --g--> G
@@ -161,14 +160,14 @@ let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Se
         Name.pushout f.Cod.Name f.Dom.Name g.Cod.Name
 
     let ob =
-        Map [ for A in f.Category.Objects do
+        Map [ for A in f.Cat.Objects do
                   let X =
-                      Map.pushout f.Cod.Ob.[A] f.Mapping.[A] g.Mapping.[A] g.Cod.Ob.[A]
+                      Map.pushout f.Cod.Ob.[A] f.Map.[A] g.Map.[A] g.Cod.Ob.[A]
 
                   (A, X) ]
 
     let ar =
-        Map [ for a in f.Category.Arrows do
+        Map [ for a in f.Cat.Arrows do
                   let x =
                       Map [ for R in ob.[a.Cod] do
                                 let rep = R |> Seq.item 0 // R is inhabited.
@@ -189,20 +188,20 @@ let pushout (f: Morphism<'A, 'U, 'S>) (g: Morphism<'A, 'U, 'T>): Presheaf<'A, Se
     { Name = name
       Ob = ob
       Ar = ar
-      Category = f.Category }
+      Cat = f.Cat }
 
 /// Exponential of presheaves G^F.
 let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>> =
     let name = Name.exp F.Name G.Name
-    let yo = Yoneda.yo F.Category
+    let yo = Yoneda.yo F.Cat
 
     let ob =
-        Map [ for A in F.Category.Objects do
+        Map [ for A in F.Cat.Objects do
                   let X = Morphism.hom (product (yo.Object A) F) G
                   (A, X) ]
 
     let ar =
-        Map [ for a in F.Category.Arrows do
+        Map [ for a in F.Cat.Arrows do
                   let x =
                       Map [ for f in ob.[a.Cod] do
                                 let g =
@@ -215,7 +214,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
     { Name = name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Cat = F.Cat }
 
 /// Renames the input presheaf with a name of an identical element in the simplification set.
 let identify (targetSet: Set<Presheaf<'A, 'S>>) (input: Presheaf<'A, 'S>): Presheaf<'A, 'S> =
@@ -234,14 +233,14 @@ let simplify (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
     let figureToInt X s = List.findIndex ((=) s) (Set.toList X)
 
     let ob =
-        Map [ for A in F.Category.Objects do
+        Map [ for A in F.Cat.Objects do
                   let X =
                       F.Ob.[A] |> Set.map (figureToInt F.Ob.[A])
 
                   (A, X) ]
 
     let ar =
-        Map [ for a in F.Category.Arrows do
+        Map [ for a in F.Cat.Arrows do
                   let x =
                       F.Ar.[a]
                       |> Seq.map (fun (KeyValue (k, v)) -> (figureToInt F.Ob.[a.Cod] k, figureToInt F.Ob.[a.Dom] v))
@@ -252,15 +251,32 @@ let simplify (F: Presheaf<'A, 'S>): Presheaf<'A, int> =
     { Name = F.Name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Cat = F.Cat }
 
 /// Determines if two presheaves are isomorphic.
 let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
-    let F = simplify F // Simplifying improves performance.
-    let G = simplify G //
+    let F, G = simplify F, simplify G // Simplifying improves performance.
 
-    [ for A in F.Category.Objects do
+    [ for A in F.Cat.Objects do
         [ for x in Map.iso F.Ob.[A] G.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
     |> Seq.exists (Map >> Morphism.isNatural F G)
+
+/// Precompose a presheaf with a functor.
+let compose (F: Presheaf<'B, 'S>) (P: Functor<'A, 'B>): Presheaf<'A, 'S> =
+    let name = Name.compose F.Name P.Name
+    let cat = P.Dom
+
+    let ob =
+        Map [ for A in cat.Objects do
+                  (A, F.Ob.[P.Ob.[A]]) ]
+
+    let ar =
+        Map [ for a in cat.Arrows do
+                  (a, F.Ar.[P.Ar.[a]]) ]
+
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Cat = cat }

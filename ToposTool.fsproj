@@ -10,6 +10,7 @@
         <Compile Include="src\Name.fs" />
         <Compile Include="src\Arrow.fs" />
         <Compile Include="src\Category.fs" />
+        <Compile Include="src\Functor.fs" />
         <Compile Include="src\Morphism.fs" />
         <Compile Include="src\Yoneda.fs" />
         <Compile Include="src\Presheaf.fs" />

@@ -1,4 +1,5 @@
 ﻿/// Functions to make and combine names.
+// todo: names should be rethought as the current design leads to unpleasant and fragile implementation of Arrow.proj
 [<RequireQualifiedAccess>]
 module Name
 
@@ -11,8 +12,9 @@ let bot = { String = @"\bot" }
 let subobject = { String = "Sub" }
 let ofString (s: string): Name = { String = s }
 let ofInt (i: int): Name = { String = $"{i}" }
-let name a: Name = { String = $"{a}" }
+let name (a: 'A): Name = { String = $"{a}" }
 let id (A: 'A): Name = { String = $"1_{{%A{A}}}" }
+let op (name: Name): Name = { String = $"{{{name.String}}}^{{op}}" }
 let eval (name: Name): Name = { String = $"e_{{{name.String}}}" }
 let char (name: Name): Name = { String = @$"\chi_{{{name.String}}}" }
 let categoryOfElements (name: Name): Name = { String = @$"\int {name.String}" }
@@ -67,6 +69,9 @@ let compose (name: Name) (name': Name): Name =
 let sub (name: Name) (name': Name): Name =
     { String = $"{{{name.String}}}_{{{name'.String}}}" }
 
+let sup (name: Name) (name': Name): Name =
+    { String = $"{{{name.String}}}^{{{name'.String}}}" }
+
 let yoneda (name: Name): Name =
     { String = $"{{ {yo.String}_{{{name.String}}} }}" }
 
@@ -84,6 +89,9 @@ let imply (name: Name) (name': Name): Name =
 
 let minus (name: Name) (name': Name): Name =
     { String = $"⟨{name.String} \ {name'.String}⟩" }
+
+let comma (name: Name) (name': Name): Name =
+    { String = $"⟨{name.String} \downarrow {name'.String}⟩" }
 
 let pullback (name: Name) (name': Name) (name'': Name): Name =
     { String = $"⟨{name.String} *_{{{name'.String}}} {name''.String}⟩" }

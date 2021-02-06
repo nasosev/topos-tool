@@ -5,44 +5,33 @@ module Latex
 
 let ofGeneric (o: _): string =
 
-    let replace (pattern: string) (replacement: string) (input: string): string = input.Replace(pattern, replacement)
-
-    let regexReplace (pattern: string) (replacement: string) (input: string): string =
-        System.Text.RegularExpressions.Regex.Replace(input, pattern, replacement)
-
-    let regexReplaceRec replace input =
-        let rec recurse input =
-            if replace input = input then input else recurse (replace input)
-
-        recurse input
-
-    let str = $"%0A{o}" // Sets print width to zero.
+    let str = $"%0A{o}" // (Sets print width to zero.)
 
     str
-    |> regexReplace "[A-Za-z0-9]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
-    |> regexReplaceRec (regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // Converts coproducts.
-    |> replace @"set []" @"{\emptyset} "
-    |> replace @"set " @" "
-    |> replace @"[" @"\lbrace " // Lists and sets will both have braces.
-    |> replace @"]" @"\rbrace " //
-    |> replace @"⟦" @"[ " // (Unicode character) Cotuples will have square brackets.
-    |> replace @"⟧" @"] " // (Unicode character)
-    |> replace @"(" @"\langle "
-    |> replace @")" @"\rangle "
-    |> replace @"⟨" "( " // (Unicode character)
-    |> replace @"⟩" @") " // (Unicode character)
-    |> replace @";" @", "
-    |> replace @"..." @"\ldots "
-    |> replace @"->" @"\to "
-    |> replace @"=>" @"\Rightarrow "
-    |> replace @"~" @"{\sim} "
-    |> replace @"-" @"\neg "
-    |> replace @"/\" @"\land "
-    |> replace @"\/" @"\lor "
-    |> replace @"@" @"\circ "
-    |> replace @"*" @"\times "
-    |> replace @"<=" @"\leq "
-    |> replace "\"" " " // Remove quotes.
+    |> String.regexReplace "[A-Za-z0-9]* \"([A-Za-z])\"" "$1 " // Converts DU strings.
+    |> String.replaceRecursive (String.regexReplace "Choice(\d)Of\d" "\\iota_$1 ") // Converts coproducts.
+    |> String.replace @"set []" @"{\emptyset} "
+    |> String.replace @"set " @" "
+    |> String.replace @"[" @"\lbrace " // Lists and sets will both have braces.
+    |> String.replace @"]" @"\rbrace " //
+    |> String.replace @"⟦" @"[ " // (Unicode character.) Cotuples will have square brackets.
+    |> String.replace @"⟧" @"] " // (Unicode character.)
+    |> String.replace @"(" @"\langle "
+    |> String.replace @")" @"\rangle "
+    |> String.replace @"⟨" "( " // (Unicode character.)
+    |> String.replace @"⟩" @") " // (Unicode character.)
+    |> String.replace @";" @", "
+    |> String.replace @"..." @"\ldots "
+    |> String.replace @"->" @"\to "
+    |> String.replace @"=>" @"\Rightarrow "
+    |> String.replace @"~" @"{\sim} "
+    |> String.replace @"-" @"\neg "
+    |> String.replace @"/\" @"\land "
+    |> String.replace @"\/" @"\lor "
+    |> String.replace @"@" @"\circ "
+    |> String.replace @"*" @"\times "
+    |> String.replace @"<=" @"\leq "
+    |> String.replace "\"" " " // Remove quotes.
 
 let ofName (name: Name): string = @$"\[\mathsf{{{ofGeneric name}}}\]"
 
@@ -79,11 +68,11 @@ let ofArrow (a: Arrow<_>): string =
         {nameof a.Cod}: $${ofGeneric a.Cod}$$"
 
 let ofMorphism (f: Morphism<_, _, _>): string =
-    $"{nameof f.Category}: {ofName f.Category.Name}\n
+    $"{nameof f.Cat}: {ofName f.Cat.Name}\n
         {nameof f.Name}: {ofName f.Name}\n
         {nameof f.Dom}: {ofName f.Dom.Name}\n
         {nameof f.Cod}: {ofName f.Cod.Name}\n
-        {nameof f.Mapping}: {ofMapMap f.Mapping}"
+        {nameof f.Map}: {ofMapMap f.Map}"
 
 let ofCategory (C: Category<_>): string =
     $"{nameof C.Name}: {ofName C.Name}\n
@@ -92,7 +81,14 @@ let ofCategory (C: Category<_>): string =
         {nameof C.Hom}: {ofMap C.Hom}\n
         {nameof C.Compose}: {ofMap C.Compose}"
 
+let ofFunctor (F: Functor<_, _>): string =
+    $"{nameof F.Name}: {ofName F.Name}\n
+        {nameof F.Ob}: {ofMap F.Ob}\n
+        {nameof F.Ar}: {ofMap (F.Ar |> Map.restrict F.Dom.NonidArrows)}\n
+        {nameof F.Dom}: {ofName F.Dom.Name}\n
+        {nameof F.Cod}: {ofName F.Cod.Name}"
+
 let ofPresheaf (F: Presheaf<_, _>): string =
     $"{nameof F.Name}: {ofName F.Name}\n
         {nameof F.Ob}: {ofMap F.Ob}\n
-        {nameof F.Ar}: {ofMapMap (F.Ar |> Map.restrict F.Category.NonidArrows)}"
+        {nameof F.Ar}: {ofMapMap (F.Ar |> Map.restrict F.Cat.NonidArrows)}"

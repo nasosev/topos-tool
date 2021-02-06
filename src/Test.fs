@@ -133,11 +133,11 @@ module Deterministic =
                 let m = Morphism.hom hV G |> Seq.exactlyOne
 
                 let f =
-                    let mapping =
+                    let map =
                         (Map [ V, Map [ cat.Id.[V], t ]
                                E, Map.empty ])
 
-                    Morphism.make "f" hV hE mapping
+                    Morphism.make "f" hV hE map
 
                 let K = Presheaf.pushout f m
 
@@ -280,7 +280,7 @@ module Random =
         |> genRepresentable
         |> Gen.two
         |> Gen.unzip
-        ||> Gen.map2 Presheaf.sum
+        ||> Gen.map2 (+)
 
     // Generates a pullback of coproducts of representables.
     let genPullback cat =
@@ -399,7 +399,7 @@ module Random =
 
         let map =
             Map [ for f in hom do
-                      (f, f.Mapping.[A].[cat.Id.[A]]) ]
+                      (f, f.Map.[A].[cat.Id.[A]]) ]
 
         let cod = F.Ob.[A]
         Map.isBijective cod map // Todo: also check naturality.
@@ -419,11 +419,6 @@ module Random =
         let F = randomSmallPresheaf cat
         F * I == F
 
-    let ``F + G ~= G + F`` cat () =
-        let F = randomRepPresheaf cat
-        let G = randomRepPresheaf cat
-        F + G == G + F
-
     let ``hom<F * G, H> ~= hom <F, G => H>`` cat () =
         let F = randomRepPresheaf cat
         let G = randomRepPresheaf cat
@@ -437,7 +432,7 @@ module Random =
             Map [ for f in homRHS do
                       let im =
                           let i = Morphism.id G
-                          let t = Morphism.product f i
+                          let t = f * i
                           let e = Morphism.eval expGH G H
                           e @ t
 
@@ -593,7 +588,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -628,7 +622,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
             static member ``sub F ~= hom <F, Omega>`` = ``sub F ~= hom <F, Omega>`` cat
@@ -662,7 +655,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -697,7 +689,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -732,7 +723,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -767,7 +757,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -802,7 +791,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 
@@ -837,7 +825,6 @@ module Random =
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
             static member ``F * 1 ~= 1`` = ``F * 1 ~= 1`` cat
-            static member ``F + G ~= G + F`` = ``F + G ~= G + F`` cat
 
             static member ``hom<F * G, H> ~= hom <F, G => H>`` = ``hom<F * G, H> ~= hom <F, G => H>`` cat
 

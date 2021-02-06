@@ -6,9 +6,11 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
     let yo = Yoneda.yo cat
 
     let ob =
+        let sub = Subobject.sub cat
+
         Map [ for A in cat.Objects do
                   let hA = yo.Object A
-                  let X = Subobject.subobjects hA
+                  let X = sub.Object hA
                   (A, X) ]
 
     let ar =
@@ -30,13 +32,13 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
     { Name = Name.omega
       Ob = ob
       Ar = ar
-      Category = cat }
+      Cat = cat }
 
 /// Truth value of the truth object.
 let truth (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let name = Name.top
 
-    let mapping =
+    let map =
         let yo = Yoneda.yo cat
 
         Map [ for A in cat.Objects do
@@ -49,16 +51,16 @@ let truth (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let cod = omega cat
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = cat }
+      Cat = cat }
 
 /// False value of the truth object.
 let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let name = Name.bot
 
-    let mapping =
+    let map =
         let yo = Yoneda.yo cat
 
         Map [ for A in cat.Objects do
@@ -74,24 +76,24 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
     let cod = omega cat
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = cat }
+      Cat = cat }
 
 /// Characteristic morphism to subobject.
 let charToSubobject (c: Morphism<'A, 'S, Heart<'A>>): Presheaf<'A, 'S> =
-    let t = truth c.Category
+    let t = truth c.Cat
     let pb = Presheaf.pullback c t
     (pb |> Morphism.proj1).Cod
 
 /// Subobject to characteristic morphism. (p92 Reyes.)
 let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 'S, Heart<'A>> =
     let name = Name.char U.Name
-    let Om = omega U.Category
+    let Om = omega U.Cat
 
-    let mapping =
-        Map [ for A in U.Category.Objects do
+    let map =
+        Map [ for A in U.Cat.Objects do
                   let x =
                       Map [ for s in top.Ob.[A] do
                                 let cs =
@@ -99,17 +101,16 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 
                                         U.Ob.[a.Dom] |> Set.contains top.Ar.[a].[s]
 
                                     let ob =
-                                        Map [ for B in U.Category.Objects do
-                                                  let X =
-                                                      U.Category.Hom.[B, A] |> Set.filter filter
+                                        Map [ for B in U.Cat.Objects do
+                                                  let X = U.Cat.Hom.[B, A] |> Set.filter filter
 
                                                   (B, X) ]
 
                                     let ar =
-                                        Map [ for a in U.Category.Arrows do
+                                        Map [ for a in U.Cat.Arrows do
                                                   let x =
-                                                      Map [ for b in U.Category.Hom.[a.Cod, A] |> Set.filter filter do
-                                                                (b, U.Category.Compose.[b, a]) ]
+                                                      Map [ for b in U.Cat.Hom.[a.Cod, A] |> Set.filter filter do
+                                                                (b, U.Cat.Compose.[b, a]) ]
 
                                                   (a, x) ]
 
@@ -117,7 +118,7 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 
                                         { Name = Name.empty
                                           Ob = ob
                                           Ar = ar
-                                          Category = U.Category }
+                                          Cat = U.Cat }
 
                                     presheaf |> Presheaf.identify Om.Ob.[A]
 
@@ -126,10 +127,10 @@ let subobjectToChar (top: Presheaf<'A, 'S>) (U: Presheaf<'A, 'S>): Morphism<'A, 
                   (A, x) ]
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = top
       Cod = Om
-      Category = U.Category }
+      Cat = U.Cat }
 
 /// Internal NOT. (p139 Goldblatt.)
 let internalNot (cat: Category<'A>): Morphism<'A, Heart<'A>, Heart<'A>> =

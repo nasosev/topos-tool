@@ -24,12 +24,12 @@ let yo (cat: Category<'A>)
         { Name = name
           Ob = ob
           Ar = ar
-          Category = cat }
+          Cat = cat }
 
     let ar (a: Arrow<'A>): Morphism<'A, Arrow<'A>, Arrow<'A>> =
         let name = Name.yoneda a.Name
 
-        let mapping =
+        let map =
             Map [ for A in cat.Objects do
                       let x =
                           Map [ for b in cat.Hom.[A, a.Dom] do
@@ -41,10 +41,10 @@ let yo (cat: Category<'A>)
         let cod = ob a.Cod
 
         { Name = name
-          Mapping = mapping
+          Map = map
           Dom = dom
           Cod = cod
-          Category = dom.Category }
+          Cat = dom.Cat }
 
     { Name = Name.yo
       Object = ob

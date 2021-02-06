@@ -1,44 +1,44 @@
-﻿/// Functions specific to the 'Morphism' type.
+﻿/// Functions specific to the `Morphism` type.
 [<RequireQualifiedAccess>]
 module Morphism
 
 /// Determines if the map of presheaves is natural.
-let isNatural (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (mapping: Map<'A, Map<'S, 'T>>): bool =
-    dom.Category.NonidArrows
+let isNatural (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (map: Map<'A, Map<'S, 'T>>): bool =
+    dom.Cat.NonidArrows
     |> Set.forall (fun a ->
         dom.Ob.[a.Cod]
-        |> Set.forall (fun x -> mapping.[a.Dom].[dom.Ar.[a].[x]] = cod.Ar.[a].[mapping.[a.Cod].[x]]))
+        |> Set.forall (fun x -> map.[a.Dom].[dom.Ar.[a].[x]] = cod.Ar.[a].[map.[a.Cod].[x]]))
 
 /// Determines if the map of presheaves is natural and defined on all objects in the domain.
-let isMorphism (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (mapping: Map<'A, Map<'S, 'T>>): bool =
-    Map.dom mapping = dom.Category.Objects
-    && isNatural dom cod mapping
+let isMorphism (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (map: Map<'A, Map<'S, 'T>>): bool =
+    Map.dom map = dom.Cat.Objects
+    && isNatural dom cod map
 
 /// Helper function to make a morphism.
 let make (nameString: string)
          (dom: Presheaf<'A, 'S>)
          (cod: Presheaf<'A, 'T>)
-         (mapping: Map<'A, Map<'S, 'T>>)
+         (map: Map<'A, Map<'S, 'T>>)
          : Morphism<'A, 'S, 'T> =
-    if not (isMorphism dom cod mapping)
-       || not (dom.Category = cod.Category) then
+    if not (isMorphism dom cod map)
+       || not (dom.Cat = cod.Cat) then
         failwith Error.makeMorphism
 
     let name = Name.ofString nameString
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Determines if the morphism is mono.
 let isMono (f: Morphism<'A, 'S, 'T>): bool =
-    f.Mapping |> Map.forall (fun _ -> Map.isInjective)
+    f.Map |> Map.forall (fun _ -> Map.isInjective)
 
 /// Determines if the morphism is epi.
 let isEpi (f: Morphism<'A, 'S, 'T>): bool =
-    f.Mapping
+    f.Map
     |> Map.forall (fun A -> Map.isSurjective f.Cod.Ob.[A])
 
 /// Determines if the morphism is an isomorphism.
@@ -47,7 +47,7 @@ let isIso (f: Morphism<'A, 'S, 'T>): bool = isEpi f && isMono f
 
 /// External hom of presheaves.
 let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
-    [ for A in dom.Category.Objects do
+    [ for A in dom.Cat.Objects do
         [ for x in Map.exp dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
@@ -56,18 +56,18 @@ let hom (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 
-        let mapping = Map ls
+        let map = Map ls
 
         { Name = name
-          Mapping = mapping
+          Map = map
           Dom = dom
           Cod = cod
-          Category = dom.Category })
+          Cat = dom.Cat })
     |> set
 
 /// Gives the set of isomorphisms between two presheaves.
 let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T>> =
-    [ for A in dom.Category.Objects do
+    [ for A in dom.Cat.Objects do
         [ for x in Map.iso dom.Ob.[A] cod.Ob.[A] do
             (A, x) ] ]
     |> List.listProduct
@@ -76,13 +76,13 @@ let iso (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>): Set<Morphism<'A, 'S, 'T
         let name =
             Name.sub (Name.hom dom.Name cod.Name) (Name.ofInt i)
 
-        let mapping = Map ls
+        let map = Map ls
 
         { Name = name
-          Mapping = mapping
+          Map = map
           Dom = dom
           Cod = cod
-          Category = dom.Category })
+          Cat = dom.Cat })
     |> set
 
 /// Applies a morphism to a presheaf.
@@ -90,24 +90,24 @@ let apply (f: Morphism<'A, 'S, 'T>) (dom: Presheaf<'A, 'S>): Presheaf<'A, 'T> =
     let name = Name.apply f.Name dom.Name
 
     let ob =
-        Map [ for A in f.Category.Objects do
+        Map [ for A in f.Cat.Objects do
                   let X =
-                      dom.Ob.[A] |> Set.map (fun x -> f.Mapping.[A].[x])
+                      dom.Ob.[A] |> Set.map (fun x -> f.Map.[A].[x])
 
                   (A, X) ]
 
     let ar =
-        Map [ for a in f.Category.Arrows do
+        Map [ for a in f.Cat.Arrows do
                   let x =
                       Map [ for x in dom.Ob.[a.Cod] do
-                                (f.Mapping.[a.Cod].[x], f.Mapping.[a.Dom].[dom.Ar.[a].[x]]) ]
+                                (f.Map.[a.Cod].[x], f.Map.[a.Dom].[dom.Ar.[a].[x]]) ]
 
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Image of a morphism.
 let image (f: Morphism<'A, 'S, 'T>): Presheaf<'A, 'T> = apply f f.Dom
@@ -116,21 +116,21 @@ let image (f: Morphism<'A, 'S, 'T>): Presheaf<'A, 'T> = apply f f.Dom
 let compose (g: Morphism<'A, 'T, 'U>) (f: Morphism<'A, 'S, 'T>): Morphism<'A, 'S, 'U> =
     let name = Name.compose g.Name f.Name
 
-    let mapping =
-        Map [ for A in g.Category.Objects do
-                  let x = Map.compose g.Mapping.[A] f.Mapping.[A]
+    let map =
+        Map [ for A in g.Cat.Objects do
+                  let x = Map.compose g.Map.[A] f.Map.[A]
                   (A, x) ]
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = f.Dom
       Cod = g.Cod
-      Category = f.Category }
+      Cat = f.Cat }
 
 /// Lifts a function to a morphism.
 let lift (name: Name) (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (f: 'S -> 'T): Morphism<'A, 'S, 'T> =
-    let mapping =
-        Map [ for A in dom.Category.Objects do
+    let map =
+        Map [ for A in dom.Cat.Objects do
                   let x =
                       Map [ for y in dom.Ob.[A] do
                                 (y, f y) ]
@@ -138,10 +138,10 @@ let lift (name: Name) (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'T>) (f: 'S -> 
                   (A, x) ]
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Gives the inclusion morphism on a presheaf and codomain.
 let inc (dom: Presheaf<'A, 'S>) (cod: Presheaf<'A, 'S>): Morphism<'A, 'S, 'S> =
@@ -170,7 +170,7 @@ let proj1 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'S> =
         { Name = name
           Ob = ob
           Ar = ar
-          Category = dom.Category }
+          Cat = dom.Cat }
 
     lift name dom cod fst
 
@@ -191,83 +191,83 @@ let proj2 (dom: Presheaf<'A, 'S * 'T>): Morphism<'A, 'S * 'T, 'T> =
         { Name = name
           Ob = ob
           Ar = ar
-          Category = dom.Category }
+          Cat = dom.Cat }
 
     lift name dom cod snd
 
-/// Binary product of presheaves. This is here because Morphism.product depends on it and the Presheaf module is later.
+/// Binary product of presheaves. This is here for dependency reason. Use instead `Presheaf.product`.
 let internal presheafProduct (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, 'S * 'T> =
     let name = Name.product F.Name G.Name
 
     let ob =
-        Map [ for A in F.Category.Objects do
+        Map [ for A in F.Cat.Objects do
                   let X = Set.product F.Ob.[A] G.Ob.[A]
                   (A, X) ]
 
     let ar =
-        Map [ for a in F.Category.Arrows do
+        Map [ for a in F.Cat.Arrows do
                   let x = Map.product F.Ar.[a] G.Ar.[a]
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Cat = F.Cat }
 
-/// Binary sum of presheaves. This is here because Morphism.sum depends on it and the Presheaf module is later.
+/// Binary sum of presheaves. This is here for dependency reason. Use instead `Presheaf.sum`.
 let internal presheafSum (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Choice<'S, 'T>> =
     let name = Name.sum F.Name G.Name
 
     let ob =
-        Map [ for A in F.Category.Objects do
+        Map [ for A in F.Cat.Objects do
                   let X = Set.sum F.Ob.[A] G.Ob.[A]
                   (A, X) ]
 
     let ar =
-        Map [ for a in F.Category.Arrows do
+        Map [ for a in F.Cat.Arrows do
                   let x = Map.sum F.Ar.[a] G.Ar.[a]
                   (a, x) ]
 
     { Name = name
       Ob = ob
       Ar = ar
-      Category = F.Category }
+      Cat = F.Cat }
 
 /// Binary product of morphisms.
 let product (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, ('S * 'U), ('T * 'D)> =
     let name = Name.product f.Name g.Name
 
-    let mapping =
-        Map [ for A in f.Category.Objects do
-                  let x = Map.product f.Mapping.[A] g.Mapping.[A]
+    let map =
+        Map [ for A in f.Cat.Objects do
+                  let x = Map.product f.Map.[A] g.Map.[A]
                   (A, x) ]
 
     let dom = presheafProduct f.Dom g.Dom
     let cod = presheafProduct f.Cod g.Cod
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Binary sum of morphisms.
 let sum (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'U, 'D>): Morphism<'A, Choice<'S, 'U>, Choice<'T, 'D>> =
     let name = Name.sum f.Name g.Name
 
-    let mapping =
-        Map [ for A in f.Category.Objects do
-                  let x = Map.sum f.Mapping.[A] g.Mapping.[A]
+    let map =
+        Map [ for A in f.Cat.Objects do
+                  let x = Map.sum f.Map.[A] g.Map.[A]
                   (A, x) ]
 
     let dom = presheafSum f.Dom g.Dom
     let cod = presheafSum f.Cod g.Cod
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Tuple of morphisms.
 let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, ('T * 'U)> =
@@ -275,19 +275,19 @@ let tuple (f: Morphism<'A, 'S, 'T>) (g: Morphism<'A, 'S, 'U>): Morphism<'A, 'S, 
 
     let name = Name.tuple f.Name g.Name
 
-    let mapping =
-        Map [ for A in f.Category.Objects do
-                  let x = Map.tuple f.Mapping.[A] g.Mapping.[A]
+    let map =
+        Map [ for A in f.Cat.Objects do
+                  let x = Map.tuple f.Map.[A] g.Map.[A]
                   (A, x) ]
 
     let dom = f.Dom
     let cod = presheafProduct f.Cod g.Cod
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Cotuple of morphisms.
 let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Choice<'T, 'U>, 'S> =
@@ -295,19 +295,19 @@ let cotuple (f: Morphism<'A, 'T, 'S>) (g: Morphism<'A, 'U, 'S>): Morphism<'A, Ch
 
     let name = Name.cotuple f.Name g.Name
 
-    let mapping =
-        Map [ for A in f.Category.Objects do
-                  let x = Map.cotuple f.Mapping.[A] g.Mapping.[A]
+    let map =
+        Map [ for A in f.Cat.Objects do
+                  let x = Map.cotuple f.Map.[A] g.Map.[A]
                   (A, x) ]
 
     let dom = presheafSum f.Dom g.Dom
     let cod = f.Cod
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }
 
 /// Evaluation map of the exponential.
 let eval (expFG: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>)
@@ -317,21 +317,21 @@ let eval (expFG: Presheaf<'A, Morphism<'A, Arrow<'A> * 'S, 'T>>)
     let name = Name.eval expFG.Name
     let dom = presheafProduct expFG F
 
-    let mapping =
-        Map [ for A in F.Category.Objects do
+    let map =
+        Map [ for A in F.Cat.Objects do
                   let x =
                       Map [ for (f, s) in dom.Ob.[A] do
-                                ((f, s), f.Mapping.[A].[F.Category.Id.[A], s]) ]
+                                ((f, s), f.Map.[A].[F.Cat.Id.[A], s]) ]
 
                   (A, x)
 
                ]
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = G
-      Category = F.Category }
+      Cat = F.Cat }
 
 /// Terminal presheaf here because it is relied on by Morphism.one.
 let internal presheafOne (cat: Category<'A>): Presheaf<'A, unit> =
@@ -346,13 +346,13 @@ let internal presheafOne (cat: Category<'A>): Presheaf<'A, unit> =
     { Name = Name.ofInt 1
       Ob = ob
       Ar = ar
-      Category = cat }
+      Cat = cat }
 
 /// Morphism to the terminal object.
 let one (cat: Category<'A>) (dom: Presheaf<'A, 'S>): Morphism<'A, 'S, unit> =
     let name = Name.one
 
-    let mapping =
+    let map =
         Map [ for A in cat.Objects do
                   let x = Map.constant dom.Ob.[A] ()
                   (A, x) ]
@@ -361,7 +361,7 @@ let one (cat: Category<'A>) (dom: Presheaf<'A, 'S>): Morphism<'A, 'S, unit> =
     let cod = presheafOne cat
 
     { Name = name
-      Mapping = mapping
+      Map = map
       Dom = dom
       Cod = cod
-      Category = dom.Category }
+      Cat = dom.Cat }

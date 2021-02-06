@@ -1,4 +1,4 @@
-﻿/// Functions specific to the 'Category' type.
+﻿/// Functions specific to the `Category` type.
 [<RequireQualifiedAccess>]
 module Category
 
@@ -84,6 +84,50 @@ let make (nameString: string)
       Hom = hom
       Compose = compose }
 
+/// Terminal category.
+let one: Category<unit> =
+    let name = Name.ofInt 1
+    let objects = set [ () ]
+    let nonidArrows = Set.empty
+    let nontrivCompose = Map.empty
+    make name.String objects nonidArrows nontrivCompose
+
+/// Creates a category from a poset.
+let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
+    let X = Relation.dom lessEq
+
+    let singletonArrow (A: 'A, B: 'A): Arrow<'A> =
+        { Name = Name.lessEq (Name.name A) (Name.name B)
+          Dom = A
+          Cod = B }
+
+    let nonidArrows =
+        Set.square X
+        |> Set.filter (fun (A, B) -> A <> B && lessEq.[A, B])
+        |> Set.map singletonArrow
+
+    let nontrivCompose =
+        Map [ for a in nonidArrows do
+                  for b in nonidArrows |> Set.filter (fun b -> b.Cod = a.Dom) do
+                      let ba = singletonArrow (b.Dom, a.Cod)
+                      ((a, b), ba) ]
+
+    make nameString X nonidArrows nontrivCompose
+
+/// Opposite of a category.
+let op (C: Category<'A>): Category<'A> =
+    let name = Name.op C.Name
+
+    let flip (a: Arrow<'A>): Arrow<'A> = { a with Dom = a.Cod; Cod = a.Dom }
+    let nonidArrows = C.NonidArrows |> Set.map flip
+
+    let nontrivCompose =
+        Map [ for a in nonidArrows do
+                  for b in nonidArrows |> Set.filter (fun b -> b.Cod = a.Dom) do
+                      ((a, b), flip C.Compose.[flip b, flip a]) ]
+
+    make name.String C.Objects nonidArrows nontrivCompose
+
 /// Binary product of categories.
 let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
 
@@ -92,7 +136,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
     let objects = (C.Objects, D.Objects) ||> Set.product
 
     let productAr (a: Arrow<'A>, b: Arrow<'B>): Arrow<'A * 'B> =
-        { Name = Name.product a.Name b.Name
+        { Name = Name.tuple a.Name b.Name
           Dom = (a.Dom, b.Dom)
           Cod = (a.Cod, b.Cod) }
 
@@ -105,7 +149,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
                  && Set.contains b (Map.image D.Id)))
         |> Set.map productAr
 
-    let compose =
+    let nontrivCompose =
         let filterNonid (compose: Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>>)
                         : Map<(Arrow<'A * 'B> * Arrow<'A * 'B>), Arrow<'A * 'B>> =
             compose
@@ -121,7 +165,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         |> Map
         |> filterNonid // Todo: it would be more efficient to filter first.
 
-    make name.String objects nonidArrows compose
+    make name.String objects nonidArrows nontrivCompose
 
 /// Binary sum of categories.
 let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
@@ -144,7 +188,7 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
         (C.NonidArrows |> Set.map coproj1, D.NonidArrows |> Set.map coproj2)
         ||> Set.union
 
-    let compose =
+    let nontrivCompose =
         let tripleMap (f: 'a -> 'b) ((a: 'a, a': 'a), a'': 'a): ('b * 'b) * 'b = ((f a, f a'), f a'')
 
         let liftComposeC =
@@ -170,32 +214,41 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
         |> Map
         |> filterNonid
 
-    make name.String objects nonidArrows compose
+    make name.String objects nonidArrows nontrivCompose
 
 /// Category of elements of a presheaf.
 let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     let name = Name.categoryOfElements F.Name
 
     let objects =
-        set [ for A in F.Category.Objects do
+        set [ for A in F.Cat.Objects do
                   for X in F.Ob.[A] do
                       (A, X) ]
 
     let lift (X, X': 'S) (a: Arrow<'A>): Arrow<'A * 'S> =
-        { Name = a.Name
+        let name =
+            Name.sup a.Name (Name.exp (Name.name X) (Name.name X'))
+
+        { Name = name
           Dom = (a.Dom, X)
           Cod = (a.Cod, X') }
 
     let nonidArrows =
-        set [ for a in F.Category.NonidArrows do
+        set [ for a in F.Cat.NonidArrows do
                   F.Ob.[a.Cod]
                   |> Set.filter (fun s -> Set.contains F.Ar.[a].[s] F.Ob.[a.Dom])
                   |> Set.map (fun s -> lift (F.Ar.[a].[s], s) a) ]
         |> Set.unionMany
 
-    let compose =
+    let nontrivCompose =
         let proj1 (a: Arrow<'A * 'S>): Arrow<'A> =
-            { Name = a.Name
+            let name =
+                let ind = a.Name.String.IndexOf "^" // todo: this is fragile.
+
+                a.Name.String.Substring(1, ind - 2)
+                |> Name.ofString
+
+            { Name = name
               Dom = fst a.Dom
               Cod = fst a.Cod }
 
@@ -203,32 +256,75 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
             for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
                 let ba =
                     let dom, cod = (snd a.Dom, snd b.Cod)
-                    lift (dom, cod) (F.Category.Compose.[proj1 b, proj1 a])
+                    lift (dom, cod) (F.Cat.Compose.[proj1 b, proj1 a])
 
                 ((b, a), ba) ]
-        |> List.filter (fun ((_, _), ba) -> F.Category.NonidArrows |> Set.contains (proj1 ba))
+        |> List.filter (fun ((_, _), ba) -> F.Cat.NonidArrows |> Set.contains (proj1 ba)) // Remove pairs whose composite is trivial. // Remove trivial composites.
         |> Map
 
-    make name.String objects nonidArrows compose
+    make name.String objects nonidArrows nontrivCompose
 
-/// Creates a category from a poset.
-let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
-    let X = Relation.dom lessEq
+/// Comma category.
+let comma (S: Functor<'A, 'C>) (T: Functor<'B, 'C>): Category<'A * 'B * Arrow<'C>> =
+    if S.Cod <> T.Cod then failwith Error.codomainMismatch
 
-    let singletonArrow (A: 'A, B: 'A): Arrow<'A> =
-        { Name = Name.lessEq (Name.name A) (Name.name B)
-          Dom = A
-          Cod = B }
+    let name = Name.comma S.Name T.Name
+
+    let cat = S.Cod
+
+    let objects =
+        set [ for A in S.Dom.Objects do
+                  for B in T.Dom.Objects do
+                      cat.Arrows
+                      |> Set.filter (fun a -> a.Dom = S.Ob.[A] && a.Cod = T.Ob.[B])
+                      |> Set.map (fun a -> (A, B, a)) ]
+        |> Set.unionMany
+
+    let lift (a: Arrow<'A>, b: Arrow<'B>) (dom: 'A * 'B * Arrow<'C>, cod: 'A * 'B * Arrow<'C>): Arrow<'A * 'B * Arrow<'C>> =
+        let name =
+            Name.sup (Name.tuple a.Name b.Name) (Name.exp (Name.name (third dom)) (Name.name (third cod)))
+
+        { Name = name; Dom = dom; Cod = cod }
 
     let nonidArrows =
-        Set.square X
-        |> Set.filter (fun (A, B) -> A <> B && lessEq.[A, B])
-        |> Set.map singletonArrow
+        let nonidArrowsPairs =
+            (S.Dom.Arrows, T.Dom.Arrows)
+            ||> Set.product
+            |> Set.filter (fun (a, b) -> not (a = S.Dom.Id.[a.Dom] && b = T.Dom.Id.[b.Dom])) // Remove ids
+
+        set [ for dom in objects do
+                  for cod in objects do
+                      nonidArrowsPairs
+                      |> Set.filter (fun (a, b) ->
+                          S.Ar.[a].Cod = (third cod).Dom
+                          && T.Ar.[b].Dom = (third dom).Cod
+                          && cat.Compose.[third cod, S.Ar.[a]] = cat.Compose.[T.Ar.[b], third dom])
+                      |> Set.map (fun (a, b) -> lift (a, b) (dom, cod)) ]
+        |> Set.unionMany
 
     let nontrivCompose =
-        Map [ for a in nonidArrows do
-                  for b in nonidArrows |> Set.filter (fun b -> b.Cod = a.Dom) do
-                      let ba = singletonArrow (b.Dom, a.Cod)
-                      ((a, b), ba) ]
+        [ for a in nonidArrows do
+            for b in nonidArrows |> Set.filter (fun b -> b.Dom = a.Cod) do
+                let ba =
+                    let dom, cod = (a.Dom, b.Cod)
 
-    make nameString X nonidArrows nontrivCompose
+                    let ba1 =
+                        S.Dom.Compose.[Arrow.proj3_1 b, Arrow.proj3_1 a]
+
+                    let ba2 =
+                        T.Dom.Compose.[Arrow.proj3_2 b, Arrow.proj3_2 a]
+
+                    lift (ba1, ba2) (dom, cod)
+
+                ((b, a), ba) ]
+        |> List.filter (fun ((_, _), ba) ->
+            (S.Dom.NonidArrows
+             |> Set.contains (Arrow.proj3_1 ba))
+            || (T.Dom.NonidArrows
+                |> Set.contains (Arrow.proj3_2 ba))) // Remove pairs whose composite is trivial.
+        |> Map
+
+    make name.String objects nonidArrows nontrivCompose
+
+/// Arrow category.
+let arrow (cat: Category<'A>): Category<Arrow<'A>> = failwith Error.todo // todo cyclic dependency issue because we want to use Arrow.proj_31

@@ -4,30 +4,19 @@ module Examples
 
 /// The terminal category 1: a single object and no nontrivial arrows.
 module Sets =
-    type Sets = Sets of string
-    let P = Sets "P"
-    let objects = set [ P ]
-    let arrows = Set.empty
-    let compose = Map.empty
-
-    let cat =
-        Category.make "Sets" objects arrows compose
-
+    let cat = Category.one
     let yo = Yoneda.yo cat
+    let P = cat.Objects |> Seq.exactlyOne
     let hP = yo.Object P
 
 /// Two copies of the terminal category: 1 + 1.
 module Bisets =
-    type Bisets = Bisets of string
-    let P, S = Bisets "P", Bisets "S"
-    let objects = set [ P; S ]
-    let arrows = Set.empty
-    let compose = Map.empty
-
-    let cat =
-        Category.make "Bisets" objects arrows compose
-
+    let cat = Category.one + Category.one
     let yo = Yoneda.yo cat
+
+    let P, S =
+        cat.Objects |> Seq.item 0, cat.Objects |> Seq.item 1
+
     let hP, hS = yo.Object P, yo.Object S
 
 /// A category with two objects and one arrow between them.

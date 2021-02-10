@@ -1,5 +1,5 @@
 ﻿/// Functions to make and combine names.
-// todo: names should be rethought as the current design leads to unpleasant and fragile implementation of Arrow.proj
+// Todo: names should be rethought as the current design leads to unpleasant and fragile implementation of Arrow.proj
 [<RequireQualifiedAccess>]
 module Name
 

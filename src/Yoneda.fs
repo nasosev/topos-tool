@@ -46,6 +46,4 @@ let yo (cat: Category<'A>)
           Cod = cod
           Cat = dom.Cat }
 
-    { Name = Name.yo
-      Object = ob
-      Arrow = ar }
+    { Name = Name.yo; Ob = ob; Ar = ar }

@@ -80,8 +80,8 @@ module Deterministic =
             // Reyes p41
             static member ``equaliser of double loops endomaps`` =
                 let yo = Yoneda.yo cat
-                let hV = yo.Object V
-                let hL = yo.Object L
+                let hV = yo.Ob V
+                let hL = yo.Ob L
                 let f = Morphism.hom hV hL |> Seq.exactlyOne
                 let doubleLoop = Presheaf.pushout f f
                 let endomorphisms = Morphism.hom doubleLoop doubleLoop
@@ -251,7 +251,7 @@ module Random =
     /// Generates a representable.
     let genRepresentable cat =
         let yo = Yoneda.yo cat
-        let reps = cat.Objects |> Set.map yo.Object
+        let reps = cat.Objects |> Set.map yo.Ob
         reps |> Gen.elements
 
     /// Generates a binary product of representables.
@@ -393,7 +393,7 @@ module Random =
         let F = randomPresheaf cat
         let A = cat.Objects |> Gen.elements |> sample
         let yo = Yoneda.yo cat
-        let hA = yo.Object A
+        let hA = yo.Ob A
 
         let hom = Morphism.hom hA F
 

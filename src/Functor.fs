@@ -1,6 +1,36 @@
 /// Functions specific to the `Functor` type.
 module Functor
 
+/// Determines if the arrow-indexed set of maps is functorial.
+let isFunctorial (dom: Category<'A>) (cod: Category<'B>) (ar: Map<Arrow<'A>, Arrow<'B>>): bool =
+    dom.Compose
+    |> Map.forall (fun (g, f) gf -> cod.Compose.[ar.[f], ar.[g]] = ar.[gf])
+
+/// Helper to create a functor from supplied domain and codomain categories, object map and nontrivial arrow map.
+let make (nameString: string)
+         (dom: Category<'A>)
+         (cod: Category<'B>)
+         (ob: Map<'A, 'B>)
+         (nonidAr: Map<Arrow<'A>, Arrow<'B>>)
+         : Functor<'A, 'B> =
+
+    let name = Name.ofString nameString
+
+    let ar =
+        let idArrow =
+            Map [ for A in dom.Objects do
+                      (dom.Id.[A], cod.Id.[ob.[A]]) ]
+
+        Map.union idArrow nonidAr
+
+    if not (isFunctorial dom cod ar) then failwith Error.makeFunctor
+
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Dom = dom
+      Cod = cod }
+
 /// Constant functor on an object of the codomain.
 let constant (dom: Category<'A>) (cod: Category<'B>) (B: 'B): Functor<'A, 'B> =
     let name = Name.name B
@@ -93,7 +123,7 @@ let proj3_1 (dom: Category<'A * 'B * 'C>): Functor<'A * 'B * 'C, 'A> =
 
                           ((a, b), ab) ]
 
-        Category.make name.String objects nonidArrows nontrivCompose
+        Category.makeInternal name objects nonidArrows nontrivCompose
 
     { Name = name
       Ob = ob

@@ -2,17 +2,17 @@
 [<RequireQualifiedAccess>]
 module Presheaf
 
+/// Determines if the arrow-indexed set of maps is functorial.
+let isFunctorial (cat: Category<'A>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
+    cat.Compose
+    |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf])
+
 /// Determines if the object-indexed sets and arrow-indexed set of maps are well-defined
 let isWellDefined (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
     cat.NonidArrows
     |> Set.forall (fun a ->
         ob.[a.Cod]
         |> Set.forall (fun s -> Set.contains ar.[a].[s] ob.[a.Dom]))
-
-/// Determines if the arrow-indexed set of maps is functorial.
-let isFunctorial (cat: Category<'A>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
-    cat.Compose
-    |> Map.forall (fun (g, f) gf -> Map.compose ar.[f] ar.[g] = ar.[gf])
 
 /// Determines if the object-indexed sets and arrow-indexed set of maps determines a presheaf.
 let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Map<'S, 'S>>): bool =
@@ -22,7 +22,7 @@ let isPresheaf (cat: Category<'A>) (ob: Map<'A, Set<'S>>) (ar: Map<Arrow<'A>, Ma
 let make (nameString: string)
          (cat: Category<'A>)
          (ob: Map<'A, Set<'S>>)
-         (nonidArrows: Map<Arrow<'A>, Map<'S, 'S>>)
+         (nonidAr: Map<Arrow<'A>, Map<'S, 'S>>)
          : Presheaf<'A, 'S> =
 
     let name = Name.ofString nameString
@@ -33,7 +33,7 @@ let make (nameString: string)
                       let x = Map.id ob.[A]
                       (cat.Id.[A], x) ]
 
-        Map.union idArrow nonidArrows
+        Map.union idArrow nonidAr
 
     if not (isPresheaf cat ob ar) then failwith Error.makePresheaf
 
@@ -197,7 +197,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
 
     let ob =
         Map [ for A in F.Cat.Objects do
-                  let X = Morphism.hom (product (yo.Object A) F) G
+                  let X = Morphism.hom (product (yo.Ob A) F) G
                   (A, X) ]
 
     let ar =
@@ -205,7 +205,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
                   let x =
                       Map [ for f in ob.[a.Cod] do
                                 let g =
-                                    Morphism.compose f (Morphism.product (yo.Arrow a) (Morphism.id F))
+                                    Morphism.compose f (Morphism.product (yo.Ar a) (Morphism.id F))
 
                                 (f, g) ]
 
@@ -275,6 +275,29 @@ let compose (F: Presheaf<'B, 'S>) (P: Functor<'A, 'B>): Presheaf<'A, 'S> =
     let ar =
         Map [ for a in cat.Arrows do
                   (a, F.Ar.[P.Ar.[a]]) ]
+
+    { Name = name
+      Ob = ob
+      Ar = ar
+      Cat = cat }
+
+/// External product of presheaves.
+let externalProduct (F: Presheaf<'A, 'S>) (G: Presheaf<'B, 'T>): Presheaf<'A * 'B, 'S * 'T> =
+    let cat = Category.product F.Cat G.Cat
+
+    let name = Name.product F.Name G.Name
+
+    let ob =
+        Map [ for (A, B) in cat.Objects do
+                  let X = Set.product F.Ob.[A] G.Ob.[B]
+                  ((A, B), X) ]
+
+    let ar =
+        Map [ for ab in cat.Arrows do
+                  let x =
+                      Map.product F.Ar.[Arrow.proj1 ab] G.Ar.[Arrow.proj2 ab]
+
+                  (ab, x) ]
 
     { Name = name
       Ob = ob

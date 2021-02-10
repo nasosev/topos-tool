@@ -13,8 +13,7 @@ type Name = { String: string }
 type Arrow<'A> = { Name: Name; Dom: 'A; Cod: 'A }
 
 /// Type of a finite category with generic objects.
-/// It is intended that `'A` is a single-case DU type, e.g. `type Sets = Sets of string`.
-/// This ensures type safety.
+/// It is intended that `'A` is a single-case DU type, e.g. `type Sets = Sets of string`; this ensures type safety.
 [<StructuredFormatDisplay("{Name}")>]
 type Category<'A when 'A: comparison> =
     { Name: Name
@@ -25,7 +24,7 @@ type Category<'A when 'A: comparison> =
       Hom: Map<'A * 'A, Set<Arrow<'A>>>
       Compose: Map<Arrow<'A> * Arrow<'A>, Arrow<'A>> }
 
-/// Type of a functor between finite categories. todo: override equality/compare for performance.
+/// Type of a functor between finite categories.
 [<StructuredFormatDisplay("{Name}")>]
 type Functor<'A, 'B when 'A: comparison and 'B: comparison> =
     { Name: Name
@@ -38,7 +37,7 @@ type Functor<'A, 'B when 'A: comparison and 'B: comparison> =
 [<StructuredFormatDisplay("{Category.Name}")>]
 type SemimonoidalCategory<'A when 'A: comparison> =
     { Cat: Category<'A>
-      Multiplication: Functor<'A * 'A, 'A> }
+      Mult: Functor<'A * 'A, 'A> }
 
 /// Type for a monoidal category.
 [<StructuredFormatDisplay("{Category.Name}")>]
@@ -103,7 +102,7 @@ type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparis
 
 /// Type for a generic functor is just a container for an object map and an arrow map.
 [<StructuredFormatDisplay("{Name}")>]
-type GenericFunctor<'O, 'A> = { Name: Name; Object: 'O; Arrow: 'A }
+type GenericFunctor<'O, 'A> = { Name: Name; Ob: 'O; Ar: 'A }
 
 /// Type for a (bi)Heyting algebra of subobjects.
 [<StructuredFormatDisplay("{Top}")>]

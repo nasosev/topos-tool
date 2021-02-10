@@ -10,9 +10,7 @@ let isTopology (j: Morphism<'A, Heart<'A>, Heart<'A>>): bool =
 
     let cond1 j = j @ t = t
     let cond2 j = j @ j = j
-
-    let cond3 j =
-        j @ (&&&) = (&&&) @ (Morphism.product j j)
+    let cond3 j = j @ (&&&) = (&&&) @ (j * j)
 
     cond1 j && cond2 j && cond3 j
 

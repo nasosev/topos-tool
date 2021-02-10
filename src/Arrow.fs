@@ -11,8 +11,33 @@ let make (nameString: string) (dom: 'A) (cod: 'A): Arrow<'A> =
 /// Creates the identity arrow on a given object.
 let internal id (A: 'A): Arrow<'A> = { Name = Name.id A; Dom = A; Cod = A }
 
-/// Checks if an arrow is an identity arrow.
+/// Checks if an arrow is an identity arrow. This shouldn't be used; instead use `Category.Id`.
 let internal isId (a: Arrow<'A>): bool = a.Name.String.[0..1] = "1_"
+
+/// Reverses the direction of an arrow.
+let flip (a: Arrow<'A>): Arrow<'A> = { a with Dom = a.Cod; Cod = a.Dom }
+
+/// Projects onto the first component of an arrow from a product category.
+let proj1 (a: Arrow<'A * 'B>): Arrow<'A> =
+
+    let pattern = "{\(([^,]*), ([^)]*).*"
+
+    { Name =
+          String.regexReplace pattern "$1" a.Name.String
+          |> Name.ofString
+      Dom = fst a.Dom
+      Cod = fst a.Cod }
+
+/// Projects onto the second component of an arrow from a product category.
+let proj2 (a: Arrow<'A * 'B>): Arrow<'B> =
+
+    let pattern = "{\(([^,]*), ([^)]*).*"
+
+    { Name =
+          String.regexReplace pattern "$2" a.Name.String
+          |> Name.ofString
+      Dom = snd a.Dom
+      Cod = snd a.Cod }
 
 /// Projects onto the first component of an arrow from a triple product category.
 let proj3_1 (a: Arrow<'A * 'B * 'C>): Arrow<'A> =

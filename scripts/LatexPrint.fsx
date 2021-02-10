@@ -1,10 +1,10 @@
 type Latex =
     static member print(a: Arrow<_>): LaTeXString = a |> Latex.ofArrow |> LaTeXString
     static member print(C: Category<_>): LaTeXString = C |> Latex.ofCategory |> LaTeXString
-    static member print(A: Functor<_, _>): LaTeXString = A |> Latex.ofFunctor |> LaTeXString
+    static member print(P: Functor<_, _>): LaTeXString = P |> Latex.ofFunctor |> LaTeXString
     static member print(F: Presheaf<_, _>): LaTeXString = F |> Latex.ofPresheaf |> LaTeXString
     static member print(f: Morphism<_, _, _>): LaTeXString = f |> Latex.ofMorphism |> LaTeXString
-    static member print(X: Map<_, Map<_, _>>): LaTeXString = X |> Latex.ofMapMap |> LaTeXString
+    static member print(x: Map<_, Map<_, _>>): LaTeXString = x |> Latex.ofMapMap |> LaTeXString
     static member print(X: seq<_>): LaTeXString =  X |> Latex.ofSeq|> LaTeXString
     static member mapPrint(x: Map<_, _>): LaTeXString = x |> Latex.ofMap |> LaTeXString // Todo: must use different name because of https://github.com/fsharp/fslang-suggestions/issues/905 .
     static member genericPrint(o: _): MathString =  o |> Latex.ofGeneric|> MathString // Todo: as above.

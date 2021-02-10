@@ -9,15 +9,15 @@ let omega (cat: Category<'A>): Presheaf<'A, Heart<'A>> =
         let sub = Subobject.sub cat
 
         Map [ for A in cat.Objects do
-                  let hA = yo.Object A
-                  let X = sub.Object hA
+                  let hA = yo.Ob A
+                  let X = sub.Ob hA
                   (A, X) ]
 
     let ar =
         Map [ for a in cat.Arrows do
                   let x =
                       Map [ for F in ob.[a.Cod] do
-                                let h = yo.Arrow a
+                                let h = yo.Ar a
                                 let g = Morphism.inc F h.Cod
                                 let pb = Presheaf.pullback h g
 
@@ -42,7 +42,7 @@ let truth (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
         let yo = Yoneda.yo cat
 
         Map [ for A in cat.Objects do
-                  let hA = yo.Object A
+                  let hA = yo.Ob A
                   let x = Map [ ((), hA) ]
 
                   (A, x) ]
@@ -65,7 +65,7 @@ let falsity (cat: Category<'A>): Morphism<'A, unit, Heart<'A>> =
 
         Map [ for A in cat.Objects do
                   let hA_bot =
-                      let subalg = yo.Object A |> Subobject.algebra
+                      let subalg = yo.Ob A |> Subobject.algebra
                       subalg.Bot
 
                   let x = Map [ ((), hA_bot) ]

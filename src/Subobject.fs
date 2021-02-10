@@ -48,7 +48,7 @@ let sub (_cat: Category<'A>)
                   let proj = (pb |> Morphism.proj1).Cod
                   (S, proj) ]
 
-    { Name = name; Object = ob; Arrow = ar }
+    { Name = name; Ob = ob; Ar = ar }
 
 /// Determines if F is a subpresheaf of G.
 let isSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =
@@ -60,7 +60,7 @@ let lessEq (U: Presheaf<'A, 'S>) (V: Presheaf<'A, 'S>): bool =
     |> Set.forall (fun a -> Map.isSubmap U.Ar.[a] V.Ar.[a])
 
 /// Gives the subobjects of a presheaf.
-let subobjects (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> = F |> (sub F.Cat).Object
+let subobjects (F: Presheaf<'A, 'S>): Set<Presheaf<'A, 'S>> = F |> (sub F.Cat).Ob
 
 /// Gives the algebra of a presheaf.
 let algebra (F: Presheaf<'A, 'S>): Algebra<'A, 'S> =

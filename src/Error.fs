@@ -5,6 +5,8 @@ module Error
 let makeCategory =
     "Supplied data does not determine a category: not all composable pairs appear in the compose map."
 
+let makeFunctor = "Supplied arrow map is not functorial."
+
 let makePresheaf =
     "Supplied data does not determine a presheaf."
 

@@ -3,12 +3,11 @@
 module Category
 
 /// Helper function to create a category given a name, a set of objects, a set of nontrivial arrows, and map of nontrivial compositions.
-let make (nameString: string)
-         (objects: Set<'A>)
-         (nonidArrows: Set<Arrow<'A>>)
-         (nontrivCompose: Map<(Arrow<'A> * Arrow<'A>), Arrow<'A>>)
-         =
-    let name = Name.ofString nameString
+let internal makeInternal (name: Name)
+                          (objects: Set<'A>)
+                          (nonidArrows: Set<Arrow<'A>>)
+                          (nontrivCompose: Map<(Arrow<'A> * Arrow<'A>), Arrow<'A>>)
+                          =
 
     let id =
         Map [ for A in objects do
@@ -84,16 +83,31 @@ let make (nameString: string)
       Hom = hom
       Compose = compose }
 
+/// Helper function to create a category given a name, a set of objects, a set of nontrivial arrows, and map of nontrivial compositions, all as lists.
+let make (nameString: string)
+         (objectsList: List<'A>)
+         (nonidArrowsList: List<Arrow<'A>>)
+         (nontrivComposeList: List<(Arrow<'A> * Arrow<'A>) * Arrow<'A>>)
+         =
+    let name = Name.ofString nameString
+    let objects = set objectsList
+    let nonidArrows = set nonidArrowsList
+    let nontrivCompose = Map.ofList nontrivComposeList
+    makeInternal name objects nonidArrows nontrivCompose
+
 /// Terminal category.
 let one: Category<unit> =
     let name = Name.ofInt 1
     let objects = set [ () ]
     let nonidArrows = Set.empty
     let nontrivCompose = Map.empty
-    make name.String objects nonidArrows nontrivCompose
+    makeInternal name objects nonidArrows nontrivCompose
 
 /// Creates a category from a poset.
 let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
+
+    let name = Name.ofString nameString
+
     let X = Relation.dom lessEq
 
     let singletonArrow (A: 'A, B: 'A): Arrow<'A> =
@@ -112,21 +126,21 @@ let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
                       let ba = singletonArrow (b.Dom, a.Cod)
                       ((a, b), ba) ]
 
-    make nameString X nonidArrows nontrivCompose
+    makeInternal name X nonidArrows nontrivCompose
 
 /// Opposite of a category.
 let op (C: Category<'A>): Category<'A> =
     let name = Name.op C.Name
 
-    let flip (a: Arrow<'A>): Arrow<'A> = { a with Dom = a.Cod; Cod = a.Dom }
-    let nonidArrows = C.NonidArrows |> Set.map flip
+
+    let nonidArrows = C.NonidArrows |> Set.map Arrow.flip
 
     let nontrivCompose =
         Map [ for a in nonidArrows do
                   for b in nonidArrows |> Set.filter (fun b -> b.Cod = a.Dom) do
-                      ((a, b), flip C.Compose.[flip b, flip a]) ]
+                      ((a, b), Arrow.flip C.Compose.[Arrow.flip b, Arrow.flip a]) ]
 
-    make name.String C.Objects nonidArrows nontrivCompose
+    makeInternal name C.Objects nonidArrows nontrivCompose
 
 /// Binary product of categories.
 let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
@@ -165,7 +179,7 @@ let product (C: Category<'A>) (D: Category<'B>): Category<'A * 'B> =
         |> Map
         |> filterNonid // Todo: it would be more efficient to filter first.
 
-    make name.String objects nonidArrows nontrivCompose
+    makeInternal name objects nonidArrows nontrivCompose
 
 /// Binary sum of categories.
 let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
@@ -214,7 +228,7 @@ let sum (C: Category<'A>) (D: Category<'B>): Category<Choice<'A, 'B>> =
         |> Map
         |> filterNonid
 
-    make name.String objects nonidArrows nontrivCompose
+    makeInternal name objects nonidArrows nontrivCompose
 
 /// Category of elements of a presheaf.
 let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
@@ -243,7 +257,7 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     let nontrivCompose =
         let proj1 (a: Arrow<'A * 'S>): Arrow<'A> =
             let name =
-                let ind = a.Name.String.IndexOf "^" // todo: this is fragile.
+                let ind = a.Name.String.IndexOf "^" // Todo: this is fragile.
 
                 a.Name.String.Substring(1, ind - 2)
                 |> Name.ofString
@@ -262,7 +276,7 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
         |> List.filter (fun ((_, _), ba) -> F.Cat.NonidArrows |> Set.contains (proj1 ba)) // Remove pairs whose composite is trivial. // Remove trivial composites.
         |> Map
 
-    make name.String objects nonidArrows nontrivCompose
+    makeInternal name objects nonidArrows nontrivCompose
 
 /// Comma category.
 let comma (S: Functor<'A, 'C>) (T: Functor<'B, 'C>): Category<'A * 'B * Arrow<'C>> =
@@ -324,7 +338,7 @@ let comma (S: Functor<'A, 'C>) (T: Functor<'B, 'C>): Category<'A * 'B * Arrow<'C
                 |> Set.contains (Arrow.proj3_2 ba))) // Remove pairs whose composite is trivial.
         |> Map
 
-    make name.String objects nonidArrows nontrivCompose
+    makeInternal name objects nonidArrows nontrivCompose
 
 /// Arrow category.
-let arrow (cat: Category<'A>): Category<Arrow<'A>> = failwith Error.todo // todo cyclic dependency issue because we want to use Arrow.proj_31
+let arrow (cat: Category<'A>): Category<Arrow<'A>> = failwith Error.todo // Todo cyclic dependency issue because we want to use Arrow.proj_31

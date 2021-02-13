@@ -1,7 +1,8 @@
 type Latex =
     static member print(a: Arrow<_>): LaTeXString = a |> Latex.ofArrow |> LaTeXString
     static member print(C: Category<_>): LaTeXString = C |> Latex.ofCategory |> LaTeXString
-    static member print(P: Functor<_, _>): LaTeXString = P |> Latex.ofFunctor |> LaTeXString
+    static member print(P: SmallFunctor<_, _>): LaTeXString = P |> Latex.ofSmallFunctor |> LaTeXString
+    static member print(P: BigFunctor<_, _, _>): LaTeXString = P |> Latex.ofBigFunctor |> LaTeXString
     static member print(F: Presheaf<_, _>): LaTeXString = F |> Latex.ofPresheaf |> LaTeXString
     static member print(f: Morphism<_, _, _>): LaTeXString = f |> Latex.ofMorphism |> LaTeXString
     static member print(x: Map<_, Map<_, _>>): LaTeXString = x |> Latex.ofMapMap |> LaTeXString

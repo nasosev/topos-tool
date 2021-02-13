@@ -80,8 +80,8 @@ module Deterministic =
             // Reyes p41
             static member ``equaliser of double loops endomaps`` =
                 let yo = Yoneda.yo cat
-                let hV = yo.Ob V
-                let hL = yo.Ob L
+                let hV = yo.Ob.[V]
+                let hL = yo.Ob.[L]
                 let f = Morphism.hom hV hL |> Seq.exactlyOne
                 let doubleLoop = Presheaf.pushout f f
                 let endomorphisms = Morphism.hom doubleLoop doubleLoop
@@ -251,7 +251,7 @@ module Random =
     /// Generates a representable.
     let genRepresentable cat =
         let yo = Yoneda.yo cat
-        let reps = cat.Objects |> Set.map yo.Ob
+        let reps = Map.image yo.Ob
         reps |> Gen.elements
 
     /// Generates a binary product of representables.
@@ -262,19 +262,25 @@ module Random =
         |> Gen.unzip
         ||> Gen.map2 (*)
 
-    /// Generates a morphism from a presheaf to a generated presheaf.
+    /// Generates a morphism from a fixed presheaf to a generated presheaf.
     let genHomFixedToGen G gH =
         (Gen.constant G, gH)
         ||> Gen.map2 Morphism.hom
         |> Gen.filter (Set.isEmpty >> not)
 
-    /// Generates a morphism from a presheaf to a generated presheaf.
+    /// Generates a morphism from a generated presheaf to a fixed presheaf.
     let genHomGenToFixed gG H =
         (gG, Gen.constant H)
         ||> Gen.map2 Morphism.hom
         |> Gen.filter (Set.isEmpty >> not)
 
-    // Generates a coproduct of representables.
+    /// Generates a morphism between fixed presheaves.
+    let genHomFixedToFixed G H =
+        (Gen.constant G, Gen.constant H)
+        ||> Gen.map2 Morphism.hom
+        |> Gen.filter (Set.isEmpty >> not)
+
+    /// Generates a coproduct of representables.
     let genRepCoproduct cat =
         cat
         |> genRepresentable
@@ -282,8 +288,31 @@ module Random =
         |> Gen.unzip
         ||> Gen.map2 (+)
 
-    // Generates a pullback of coproducts of representables.
-    let genPullback cat =
+    // Generates a pair of morphisms of representables with a common source.
+    let genOutwardMorphisms cat =
+        let (gG, gH, gI) =
+            cat |> genRepresentable |> Gen.three |> Gen.unzip3
+
+        let I = gI |> sample
+
+        let f =
+            (I, gG)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant // Todo: why do we need these last two pipes?
+
+        let g =
+            (I, gH)
+            ||> genHomFixedToGen
+            |> genElementFromInhabitedSet
+            |> sample
+            |> Gen.constant
+
+        (f, g)
+
+    // Generates a pair of morphisms of representables with a common target.
+    let genInwardMorphisms cat =
         let (gG, gH, gI) =
             cat |> genRepresentable |> Gen.three |> Gen.unzip3
 
@@ -303,30 +332,31 @@ module Random =
             |> sample
             |> Gen.constant
 
+        (f, g)
+
+    // Generates a set of parallel morphisms of representables.
+    let genParallelMorphisms cat =
+        let (gG, gH) =
+            cat |> genRepresentable |> Gen.two |> Gen.unzip
+
+        let f =
+            (gG, gH)
+            ||> Gen.map2 Morphism.hom
+            |> Gen.filter (Set.isEmpty >> not)
+            |> sample
+            |> Gen.elements
+
+        (f, f)
+
+    // Generates a pullback of coproducts of representables.
+    let genPullback cat =
+        let (f, g) = cat |> genInwardMorphisms
         let pb = (f, g) ||> Gen.map2 Presheaf.pullback
         (pb, f, g)
 
     // Generates a pushout of coproducts representables.
     let genPushout cat =
-        let (gG, gH, gI) =
-            cat |> genRepresentable |> Gen.three |> Gen.unzip3
-
-        let I = gI |> sample
-
-        let f =
-            (I, gG)
-            ||> genHomFixedToGen
-            |> genElementFromInhabitedSet
-            |> sample
-            |> Gen.constant
-
-        let g =
-            (I, gH)
-            ||> genHomFixedToGen
-            |> genElementFromInhabitedSet
-            |> sample
-            |> Gen.constant
-
+        let (f, g) = cat |> genOutwardMorphisms
         let po = (f, g) ||> Gen.map2 Presheaf.pushout
         (po, f, g)
 
@@ -354,7 +384,7 @@ module Random =
         let po = (f, g) ||> Gen.map2 Presheaf.pushout
         (po, f, g)
 
-    /// Samples a random a morphism between.
+    /// Samples a random a morphism.
     let randomHom cat =
         cat
         |> genSmallPushout
@@ -393,7 +423,7 @@ module Random =
         let F = randomPresheaf cat
         let A = cat.Objects |> Gen.elements |> sample
         let yo = Yoneda.yo cat
-        let hA = yo.Ob A
+        let hA = yo.Ob.[A]
 
         let hom = Morphism.hom hA F
 
@@ -579,11 +609,56 @@ module Random =
 
         neg @ neg |> Topology.isTopology
 
+    /// Check correctness of general (co)limit constructions.
+    let pushout cat () =
+        let (_, g_f, g_h) = genPushout cat
+
+        let f = g_f |> sample
+        let h = g_h |> sample
+
+        let functor =
+            let span = Examples.Index.span
+            let A = span.Objects |> Seq.item 0
+            let B = span.Objects |> Seq.item 1
+            let C = span.Objects |> Seq.item 2
+            let a = span.NonidArrows |> Seq.item 0
+            let c = span.NonidArrows |> Seq.item 1
+
+            let ob = [ A, f.Cod; B, f.Dom; C, h.Cod ]
+            let ar = [ a, f; c, h ]
+            BigFunctor.make span ob ar
+
+        Presheaf.pushout f h == Limit.colim functor
+
+    let coequaliser cat () =
+        let (g_f, g_h) = genParallelMorphisms cat
+        let f = g_f |> sample
+        let h = g_h |> sample
+
+        let functor =
+            let equaliser = Examples.Index.equaliser
+            let A = equaliser.Objects |> Seq.item 0
+            let B = equaliser.Objects |> Seq.item 1
+            let a = equaliser.NonidArrows |> Seq.item 0
+            let c = equaliser.NonidArrows |> Seq.item 1
+
+            let ob = [ A, f.Dom; B, f.Cod ]
+            let ar = [ a, f; c, h ]
+            BigFunctor.make equaliser ob ar
+
+        let lhs = Presheaf.coequaliser f h
+
+        lhs == Limit.colim functor
+
+    let ``(co)limits`` cat () = pushout cat () && coequaliser cat () // todo: something is preventing this test from running, probably generator is failing
+    // pushout cat () && coequaliser cat ()  // && pullback cat () && equaliser cat ()
+
     module Sets =
 
         open Examples.Sets
 
         type Sets =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -618,6 +693,7 @@ module Random =
         open Examples.Bisets
 
         type Bisets =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -651,6 +727,7 @@ module Random =
         open Examples.Bouquets
 
         type Bouquets =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -685,6 +762,7 @@ module Random =
         open Examples.Graphs
 
         type Graphs =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -719,6 +797,7 @@ module Random =
         open Examples.ReflexiveGraphs
 
         type ReflexiveGraphs =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -753,6 +832,7 @@ module Random =
         open Examples.DiamondLattice
 
         type DiamondLattice =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -787,6 +867,7 @@ module Random =
         open Examples.DiamondLattice
 
         type CyclicGroup3 =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat
@@ -821,6 +902,7 @@ module Random =
         open Examples.MonoidTrans2
 
         type MonoidTrans2 =
+            static member ``(co)limits`` = ``(co)limits`` cat
             static member ``yoneda lemma`` = ``yoneda lemma`` cat
             static member ``F + 0 ~= F`` = ``F + 0 ~= F`` cat
             static member ``F * 0 ~= 0`` = ``F * 0 ~= 0`` cat

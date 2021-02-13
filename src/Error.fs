@@ -15,4 +15,5 @@ let makeMorphism =
 
 let domainMismatch = "Domain mismatch."
 let codomainMismatch = "Codomain mismatch."
-let todo = "Todo: not yet implemented."
+let emptyInput = "Input cannot be empty."
+let todo = "Not yet implemented."

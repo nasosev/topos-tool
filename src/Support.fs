@@ -400,9 +400,8 @@ module Map =
 
         let equal =
             [ for r in Z do
-                for r' in Z do
-                    let x', y' = x.[r], y.[r']
-                    (x', y') ]
+                let x', y' = x.[r], y.[r]
+                (x', y') ]
             |> set
             |> Relation.ofPairs X X
             |> Relation.equivalenceClosure
@@ -416,9 +415,8 @@ module Map =
 
         let equal =
             [ for r in Z do
-                for r' in Z do
-                    let x', y' = Choice1Of2 x.[r], Choice2Of2 y.[r']
-                    (x', y') ]
+                let x', y' = Choice1Of2 x.[r], Choice2Of2 y.[r]
+                (x', y') ]
             |> set
             |> Relation.ofPairs XY XY
             |> Relation.equivalenceClosure
@@ -467,3 +465,6 @@ module Map =
             |> Set.toList
             |> List.permutations
             |> Seq.map (List.zip (X |> Set.toList) >> Map)
+
+    /// Converts a map to a function.
+    let toFun (x: Map<'A, 'B>): 'A -> 'B = fun y -> x.[y]

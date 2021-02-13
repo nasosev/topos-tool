@@ -354,9 +354,11 @@ MigrationBackup/
 
 # Jupyter
 nb/.ipynb_checkpoints/
+nb/.vscode/
 
 # Scratch
 scratch/
 
-nb/.vscode/
+# Misc
 .DS_Store
+todo.txt

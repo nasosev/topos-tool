@@ -2,12 +2,41 @@
 [<RequireQualifiedAccess>]
 module Examples
 
+/// Indexing categories useful for constructing (co)limits.
+module Index =
+    type Index = Index of string
+
+    let product =
+        let A, B = Index "A", Index "B"
+        let objects = [ A; B ]
+        let arrows = []
+        let compose = []
+        Category.make "two" objects arrows compose
+
+    let equaliser =
+        let A, B = Index "A", Index "B"
+        let objects = [ A; B ]
+        let b1, b2 = Arrow.make "b1" A B, Arrow.make "b2" A B
+        let arrows = [ b1; b2 ]
+        let compose = []
+        Category.make "equaliser" objects arrows compose
+
+    let span =
+        let A, B, C = Index "A", Index "B", Index "C"
+        let objects = [ A; B; C ]
+        let a, c = Arrow.make "a" B A, Arrow.make "c" B C
+        let arrows = [ a; c ]
+        let compose = []
+        Category.make "span" objects arrows compose
+
+    let cospan = Category.op span
+
 /// The terminal category 1: a single object and no nontrivial arrows.
 module Sets =
     let cat = Category.one
     let yo = Yoneda.yo cat
     let P = cat.Objects |> Seq.exactlyOne
-    let hP = yo.Ob P
+    let hP = yo.Ob.[P]
 
 /// Two copies of the terminal category: 1 + 1.
 module Bisets =
@@ -17,7 +46,7 @@ module Bisets =
     let P, S =
         cat.Objects |> Seq.item 0, cat.Objects |> Seq.item 1
 
-    let hP, hS = yo.Ob P, yo.Ob S
+    let hP, hS = yo.Ob.[P], yo.Ob.[S]
 
 /// A category with two objects and one arrow between them.
 module Bouquets =
@@ -32,7 +61,7 @@ module Bouquets =
         Category.make "Bouquets" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hV, hL = yo.Ob V, yo.Ob L
+    let hV, hL = yo.Ob.[V], yo.Ob.[L]
 
 /// A category with two objects and two arrows from one to the other.
 module Graphs =
@@ -47,7 +76,7 @@ module Graphs =
         Category.make "Graphs" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hV, hE = yo.Ob V, yo.Ob E
+    let hV, hE = yo.Ob.[V], yo.Ob.[E]
 
 /// Same as Graphs but with a new arrow going the other direction. Note the compose relation.
 module ReflexiveGraphs =
@@ -78,7 +107,7 @@ module ReflexiveGraphs =
         Category.make "ReflexiveGraphs" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hV, hE = yo.Ob V, yo.Ob E
+    let hV, hE = yo.Ob.[V], yo.Ob.[E]
 
 /// A diamond lattice as a category.
 module DiamondLattice =
@@ -95,7 +124,8 @@ module DiamondLattice =
 
     let yo = Yoneda.yo cat
 
-    let hB, hL, hR, hT = yo.Ob B, yo.Ob L, yo.Ob R, yo.Ob T
+    let hB, hL, hR, hT =
+        yo.Ob.[B], yo.Ob.[L], yo.Ob.[R], yo.Ob.[T]
 
 /// The cyclic group Z_3 as a single-object category.
 module CyclicGroup3 =
@@ -113,7 +143,7 @@ module CyclicGroup3 =
         Category.make "CyclicGroup3" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hG = yo.Ob G
+    let hG = yo.Ob.[G]
 
 /// The full transformation monoid on a set of size two as a single-object category.
 module MonoidTrans2 =
@@ -137,7 +167,7 @@ module MonoidTrans2 =
           (n, z), o ]
 
     let cat =
-        Category.make "MonoidT2" objects arrows compose
+        Category.make "MonoidTrans2" objects arrows compose
 
     let yo = Yoneda.yo cat
-    let hM = yo.Ob M
+    let hM = yo.Ob.[M]

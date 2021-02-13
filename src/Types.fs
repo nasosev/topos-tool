@@ -26,7 +26,7 @@ type Category<'A when 'A: comparison> =
 
 /// Type of a functor between finite categories.
 [<StructuredFormatDisplay("{Name}")>]
-type Functor<'A, 'B when 'A: comparison and 'B: comparison> =
+type SmallFunctor<'A, 'B when 'A: comparison and 'B: comparison> =
     { Name: Name
       Ob: Map<'A, 'B>
       Ar: Map<Arrow<'A>, Arrow<'B>>
@@ -37,13 +37,13 @@ type Functor<'A, 'B when 'A: comparison and 'B: comparison> =
 [<StructuredFormatDisplay("{Category.Name}")>]
 type SemimonoidalCategory<'A when 'A: comparison> =
     { Cat: Category<'A>
-      Mult: Functor<'A * 'A, 'A> }
+      Mult: SmallFunctor<'A * 'A, 'A> }
 
 /// Type for a monoidal category.
 [<StructuredFormatDisplay("{Category.Name}")>]
 type MonoidalCategory<'A when 'A: comparison> =
     { Cat: Category<'A>
-      Mult: Functor<'A * 'A, 'A>
+      Mult: SmallFunctor<'A * 'A, 'A>
       Unit: 'A }
 
 /// Type of a presheaf into homogenous sets of type `'S` containing object and arrow functions.
@@ -100,9 +100,14 @@ type Morphism<'A, 'S, 'T when 'A: comparison and 'S: comparison and 'T: comparis
                 if c <> 0 then c else compare x.Cod y.Cod // Comparing the `Category` field has a bad performance cost.
             | _ -> invalidArg "yobj" "cannot compare values of different types"
 
-/// Type for a generic functor is just a container for an object map and an arrow map.
+/// Type of a functor between from a finite category to the category of presheaves.
 [<StructuredFormatDisplay("{Name}")>]
-type GenericFunctor<'O, 'A> = { Name: Name; Ob: 'O; Ar: 'A }
+type BigFunctor<'I, 'A, 'S when 'I: comparison and 'A: comparison and 'S: comparison> =
+    { Name: Name
+      Ob: Map<'I, Presheaf<'A, 'S>>
+      Ar: Map<Arrow<'I>, Morphism<'A, 'S, 'S>>
+      Dom: Category<'I>
+      Cat: Category<'A> }
 
 /// Type for a (bi)Heyting algebra of subobjects.
 [<StructuredFormatDisplay("{Top}")>]

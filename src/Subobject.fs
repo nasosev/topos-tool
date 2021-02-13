@@ -5,7 +5,9 @@ module Subobject
 /// Subobject functor.
 // Todo: resolve genericity problems with this definition.
 let sub (_cat: Category<'A>)
-        : GenericFunctor<(Presheaf<'A, 'S> -> Set<Presheaf<'A, 'S>>), Morphism<'A, 'S, 'T> -> Map<Presheaf<'A, 'T>, Presheaf<'A, 'S>>> =
+        : {| Ar: Morphism<'A, 'a, 'b> -> Map<Presheaf<'A, 'b>, Presheaf<'A, 'a>>
+             Name: Name
+             Ob: Presheaf<'A, 'c> -> Set<Presheaf<'A, 'c>> |} =
     let name = Name.subobject
 
     // Gives a descriptive name for a subpresheaf with the specified objects and arrow maps.
@@ -48,7 +50,7 @@ let sub (_cat: Category<'A>)
                   let proj = (pb |> Morphism.proj1).Cod
                   (S, proj) ]
 
-    { Name = name; Ob = ob; Ar = ar }
+    {| Name = name; Ob = ob; Ar = ar |}
 
 /// Determines if F is a subpresheaf of G.
 let isSubobject (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'S>): bool =

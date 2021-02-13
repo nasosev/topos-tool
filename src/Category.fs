@@ -132,7 +132,6 @@ let ofPoset (nameString: string) (lessEq: Relation<'A, 'A>): Category<'A> =
 let op (C: Category<'A>): Category<'A> =
     let name = Name.op C.Name
 
-
     let nonidArrows = C.NonidArrows |> Set.map Arrow.flip
 
     let nontrivCompose =
@@ -279,7 +278,7 @@ let ofElements (F: Presheaf<'A, 'S>): Category<'A * 'S> =
     makeInternal name objects nonidArrows nontrivCompose
 
 /// Comma category.
-let comma (S: Functor<'A, 'C>) (T: Functor<'B, 'C>): Category<'A * 'B * Arrow<'C>> =
+let comma (S: SmallFunctor<'A, 'C>) (T: SmallFunctor<'B, 'C>): Category<'A * 'B * Arrow<'C>> =
     if S.Cod <> T.Cod then failwith Error.codomainMismatch
 
     let name = Name.comma S.Name T.Name

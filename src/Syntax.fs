@@ -23,7 +23,7 @@ let inline (+) a b = (?<-) Sum a b
 type Compose = Compose
     with
         static member (?<-)(Compose, f, g) = Morphism.compose f g
-        static member (?<-)(Compose, P, Q) = Functor.compose P Q
+        static member (?<-)(Compose, P, Q) = SmallFunctor.compose P Q
         static member inline (?<-)(Compose, a, b) = a @ b
 
 let inline (@) a b = (?<-) Compose a b

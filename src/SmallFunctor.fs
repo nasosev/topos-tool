@@ -1,5 +1,6 @@
-/// Functions specific to the `Functor` type.
-module Functor
+/// Functions specific to the `SmallFunctor` type that encodes a functor between base categories.
+[<RequireQualifiedAccess>]
+module SmallFunctor
 
 /// Determines if the arrow-indexed set of maps is functorial.
 let isFunctorial (dom: Category<'A>) (cod: Category<'B>) (ar: Map<Arrow<'A>, Arrow<'B>>): bool =
@@ -10,11 +11,14 @@ let isFunctorial (dom: Category<'A>) (cod: Category<'B>) (ar: Map<Arrow<'A>, Arr
 let make (nameString: string)
          (dom: Category<'A>)
          (cod: Category<'B>)
-         (ob: Map<'A, 'B>)
-         (nonidAr: Map<Arrow<'A>, Arrow<'B>>)
-         : Functor<'A, 'B> =
+         (obList: List<'A * 'B>)
+         (nonidArList: List<Arrow<'A> * Arrow<'B>>)
+         : SmallFunctor<'A, 'B> =
 
     let name = Name.ofString nameString
+
+    let ob = Map obList
+    let nonidAr = Map nonidArList
 
     let ar =
         let idArrow =
@@ -32,7 +36,7 @@ let make (nameString: string)
       Cod = cod }
 
 /// Constant functor on an object of the codomain.
-let constant (dom: Category<'A>) (cod: Category<'B>) (B: 'B): Functor<'A, 'B> =
+let constant (dom: Category<'A>) (cod: Category<'B>) (B: 'B): SmallFunctor<'A, 'B> =
     let name = Name.name B
 
     let ob =
@@ -50,7 +54,7 @@ let constant (dom: Category<'A>) (cod: Category<'B>) (B: 'B): Functor<'A, 'B> =
       Cod = cod }
 
 /// Identity functor on a category.
-let id (dom: Category<'A>): Functor<'A, 'A> =
+let id (dom: Category<'A>): SmallFunctor<'A, 'A> =
     let name = Name.id dom.Name
 
     let ob =
@@ -68,7 +72,7 @@ let id (dom: Category<'A>): Functor<'A, 'A> =
       Cod = dom }
 
 /// Composition of functors.
-let compose (P: Functor<'B, 'C>) (Q: Functor<'A, 'B>): Functor<'A, 'C> =
+let compose (P: SmallFunctor<'B, 'C>) (Q: SmallFunctor<'A, 'B>): SmallFunctor<'A, 'C> =
     let name = Name.compose P.Name Q.Name
 
     let ob =
@@ -86,10 +90,10 @@ let compose (P: Functor<'B, 'C>) (Q: Functor<'A, 'B>): Functor<'A, 'C> =
       Cod = P.Cod }
 
 /// Applies a functor to a category.
-let apply (P: Functor<'A, 'B>) (cat: Category<'A>): Category<'B> = failwith Error.todo
+let apply (P: SmallFunctor<'A, 'B>) (cat: Category<'A>): Category<'B> = failwith Error.todo
 
 /// Projection from a triple product category onto the first factor.
-let proj3_1 (dom: Category<'A * 'B * 'C>): Functor<'A * 'B * 'C, 'A> =
+let proj3_1 (dom: Category<'A * 'B * 'C>): SmallFunctor<'A * 'B * 'C, 'A> =
     let name = Name.proj 1 dom.Name
 
     let ob =

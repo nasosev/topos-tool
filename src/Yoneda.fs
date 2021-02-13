@@ -3,47 +3,58 @@
 module Yoneda
 
 /// Yoneda embedding C -> Psh(C).
-let yo (cat: Category<'A>)
-       : GenericFunctor<('A -> Presheaf<'A, Arrow<'A>>), (Arrow<'A> -> Morphism<'A, Arrow<'A>, Arrow<'A>>)> =
-    let ob (A: 'A): Presheaf<'A, Arrow<'A>> =
-        let name = Name.yoneda (Name.ofString $"{A}")
+let yo (cat: Category<'A>): BigFunctor<'A, 'A, Arrow<'A>> =
+    let ob =
+        Map [ for A in cat.Objects do
+                  let name = Name.yoneda (Name.ofString $"{A}")
 
-        let ob =
-            Map [ for B in cat.Objects do
-                      let X = cat.Hom.[B, A]
-                      (B, X) ]
+                  let ob =
+                      Map [ for B in cat.Objects do
+                                let X = cat.Hom.[B, A]
+                                (B, X) ]
 
-        let ar =
-            Map [ for a in cat.Arrows do
-                      let x =
-                          Map [ for b in cat.Hom.[a.Cod, A] do
-                                    (b, cat.Compose.[b, a]) ]
+                  let ar =
+                      Map [ for a in cat.Arrows do
+                                let x =
+                                    Map [ for b in cat.Hom.[a.Cod, A] do
+                                              (b, cat.Compose.[b, a]) ]
 
-                      (a, x) ]
+                                (a, x) ]
 
-        { Name = name
-          Ob = ob
-          Ar = ar
-          Cat = cat }
+                  let F =
+                      { Name = name
+                        Ob = ob
+                        Ar = ar
+                        Cat = cat }
 
-    let ar (a: Arrow<'A>): Morphism<'A, Arrow<'A>, Arrow<'A>> =
-        let name = Name.yoneda a.Name
+                  (A, F) ]
 
-        let map =
-            Map [ for A in cat.Objects do
-                      let x =
-                          Map [ for b in cat.Hom.[A, a.Dom] do
-                                    (b, cat.Compose.[a, b]) ]
+    let ar =
+        Map [ for a in cat.Arrows do
+                  let name = Name.yoneda a.Name
 
-                      (A, x) ]
+                  let map =
+                      Map [ for A in cat.Objects do
+                                let x =
+                                    Map [ for b in cat.Hom.[A, a.Dom] do
+                                              (b, cat.Compose.[a, b]) ]
 
-        let dom = ob a.Dom
-        let cod = ob a.Cod
+                                (A, x) ]
 
-        { Name = name
-          Map = map
-          Dom = dom
-          Cod = cod
-          Cat = dom.Cat }
+                  let dom = ob.[a.Dom]
+                  let cod = ob.[a.Cod]
 
-    { Name = Name.yo; Ob = ob; Ar = ar }
+                  let f =
+                      { Name = name
+                        Map = map
+                        Dom = dom
+                        Cod = cod
+                        Cat = dom.Cat }
+
+                  (a, f) ]
+
+    { Name = Name.yo
+      Ob = ob
+      Ar = ar
+      Dom = cat
+      Cat = cat }

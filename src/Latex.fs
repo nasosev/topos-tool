@@ -81,12 +81,19 @@ let ofCategory (C: Category<_>): string =
         {nameof C.Hom}: {ofMap C.Hom}\n
         {nameof C.Compose}: {ofMap C.Compose}"
 
-let ofFunctor (F: Functor<_, _>): string =
+let ofSmallFunctor (F: SmallFunctor<_, _>): string =
     $"{nameof F.Name}: {ofName F.Name}\n
         {nameof F.Ob}: {ofMap F.Ob}\n
         {nameof F.Ar}: {ofMap (F.Ar |> Map.restrict F.Dom.NonidArrows)}\n
         {nameof F.Dom}: {ofName F.Dom.Name}\n
         {nameof F.Cod}: {ofName F.Cod.Name}"
+
+let ofBigFunctor (F: BigFunctor<_, _, _>): string =
+    $"{nameof F.Name}: {ofName F.Name}\n
+        {nameof F.Ob}: {ofMap F.Ob}\n
+        {nameof F.Ar}: {ofMap (F.Ar |> Map.restrict F.Dom.NonidArrows)}\n
+        {nameof F.Dom}: {ofName F.Dom.Name}\n
+        {nameof F.Cat}: {ofName F.Cat.Name}"
 
 let ofPresheaf (F: Presheaf<_, _>): string =
     $"{nameof F.Name}: {ofName F.Name}\n

@@ -197,7 +197,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
 
     let ob =
         Map [ for A in F.Cat.Objects do
-                  let X = Morphism.hom (product (yo.Ob A) F) G
+                  let X = Morphism.hom (product (yo.Ob.[A]) F) G
                   (A, X) ]
 
     let ar =
@@ -205,7 +205,7 @@ let exp (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): Presheaf<'A, Morphism<'A, A
                   let x =
                       Map [ for f in ob.[a.Cod] do
                                 let g =
-                                    Morphism.compose f (Morphism.product (yo.Ar a) (Morphism.id F))
+                                    Morphism.compose f (Morphism.product (yo.Ar.[a]) (Morphism.id F))
 
                                 (f, g) ]
 
@@ -264,7 +264,7 @@ let isIso (F: Presheaf<'A, 'S>) (G: Presheaf<'A, 'T>): bool =
     |> Seq.exists (Map >> Morphism.isNatural F G)
 
 /// Precompose a presheaf with a functor.
-let compose (F: Presheaf<'B, 'S>) (P: Functor<'A, 'B>): Presheaf<'A, 'S> =
+let compose (F: Presheaf<'B, 'S>) (P: SmallFunctor<'A, 'B>): Presheaf<'A, 'S> =
     let name = Name.compose F.Name P.Name
     let cat = P.Dom
 

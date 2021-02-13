@@ -18,7 +18,7 @@ version: prerelease
     dotnet build -c release
     ```
 - notebooks
-  - this program is intended to be used in `.ipynb` notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive for details on how to set this up.
+  - this program is intended to be used in `.ipynb` notebook files within visual studio code or jupyter. see https://github.com/dotnet/interactive/blob/main/README.md for details on how to set this up.
   - examples are in the directory "nb".
 - tests
   - in the root directory, run tests by entering at your terminal:
